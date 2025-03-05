@@ -7,6 +7,7 @@ import { toNumber } from "lodash";
 import logger from "@/services/logger";
 import router from "./routes";
 import { handleErrorsMiddleWare } from "./middlewares/handleErrors";
+import { initSocket } from "./socket";
 
 export interface ServerAddress {
   address: string;
@@ -23,6 +24,14 @@ export default class ApplicationServer {
     this.setupMiddlewares();
     this.setupRoutes();
     this.setupErrorHandlers();
+    this.initializeSocketIo();
+  }
+
+  private initializeSocketIo() {
+    logger.info(
+      `[+]${configuration.name}:${configuration.version} Initializing socketio server`
+    );
+    initSocket(this.httpServer);
   }
 
   private setupMiddlewares(): void {
