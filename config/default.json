@@ -1,0 +1,14 @@
+{
+  "name": "The hive auth services",
+  "port": null,
+  "db": "",
+  "redis_db": "",
+  "token": {
+    "access_expiry": "15m",
+    "refresh_expiry": "1d"
+  },
+  "registry": {
+    "url": "http://localhost:9000",
+    "version": "*"
+  }
+}
