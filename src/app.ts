@@ -7,7 +7,9 @@ import { toNumber } from "lodash";
 import logger from "@/services/logger";
 import router from "./routes";
 import { handleErrorsMiddleWare } from "./middlewares/handleErrors";
-import { initSocket } from "./socket";
+import { setUpSocketNamespacesAndSubscribeToEvents } from "./socket";
+import { subscribeToMQTTTopics } from "./queue";
+import expressHttpServer from "./services/express-http-server";
 
 export interface ServerAddress {
   address: string;
@@ -19,11 +21,12 @@ export default class ApplicationServer {
   private httpServer: Server;
 
   constructor() {
-    this.app = express();
-    this.httpServer = createServer(this.app);
+    this.app = expressHttpServer.expressApp;
+    this.httpServer = expressHttpServer.httpServer;
     this.setupMiddlewares();
     this.setupRoutes();
     this.setupErrorHandlers();
+    this.subscribeToMqtt();
     this.initializeSocketIo();
   }
 
@@ -31,7 +34,14 @@ export default class ApplicationServer {
     logger.info(
       `[+]${configuration.name}:${configuration.version} Initializing socketio server`
     );
-    initSocket(this.httpServer);
+    setUpSocketNamespacesAndSubscribeToEvents();
+  }
+
+  private subscribeToMqtt() {
+    logger.info(
+      `[+]${configuration.name}:${configuration.version} Subscribing to mqtt topics`
+    );
+    subscribeToMQTTTopics();
   }
 
   private setupMiddlewares(): void {
