@@ -1,8 +1,9 @@
 {
-  "name": "The hive auth services",
+  "name": "Konda",
   "port": null,
   "db": "",
   "redis_db": "",
+  "mqtt_broker": "",
   "token": {
     "access_expiry": "15m",
     "refresh_expiry": "1d"

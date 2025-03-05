@@ -7,5 +7,6 @@
   "github_client_id": "GITHUB_CLIENT_ID",
   "github_client_secrete": "GITHUB_CLIENT_SECRETE",
   "redis_db": "REDIS_DB_URL",
+  "mqtt_broker": "MQTT_BROKER_URL",
   "auth_secrete": "AUTH_SECRET"
 }

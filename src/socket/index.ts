@@ -9,8 +9,8 @@ export const initSocket = (server: HTTPServer) => {
   });
 
   // Namespace management
-  const chatNamespace = io.of("/chat");
-  const commandsNamespace = io.of("/cmd");
+  const chatNamespace = io.of("/ws/chat");
+  const commandsNamespace = io.of("/ws/cmd");
 
   // Register events for different namespaces
   commandsNamespace.on("connection", commandEvents);
