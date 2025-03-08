@@ -1,9 +1,11 @@
 import logger from "@/services/logger";
 import mqttClient from "@/services/mqtt";
+import { sendSocketMessage } from "@/socket";
 
-const MQTT_TOPICS = {
+export const MQTT_TOPICS = {
   GPS: "sensors/gps",
   TEMPERATURE: "sensors/tmp",
+  CMD_BROADCAST: "sensor/cmd/broadcast",
 } as const;
 
 export const subscribeToMQTTTopics = () => {
@@ -29,6 +31,11 @@ export const subscribeToMQTTTopics = () => {
         break;
       case MQTT_TOPICS.TEMPERATURE:
         logger.info(`Temperature data received: ${data}`);
+        break;
+      case MQTT_TOPICS.CMD_BROADCAST:
+        // Command output from iot device
+        logger.info(`Command data received: ${data}`);
+        sendSocketMessage("cmd", undefined, data);
         break;
       default:
         logger.warn(`Unhandled topic: ${topic}`);
