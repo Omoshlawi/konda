@@ -7,24 +7,24 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Account {
-  id                String   @id @default(uuid()) @db.Uuid
-  userId            String   @db.Uuid
+  id                String   @id @default(uuid()) //@db.Uuid
+  userId            String   //@db.Uuid
   type              String
   provider          String
   providerAccountId String   @default(cuid())
-  refresh_token     String?  @db.Text
+  refresh_token     String?    //@db.Text
   refresh_expire_at Int?
-  access_token      String?  @db.Text
+  access_token      String?  //@db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
   voided            Boolean  @default(false)
-  id_token          String?  @db.Text
+  id_token          String?  //@db.Text
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -33,7 +33,7 @@ model Account {
 }
 
 model User {
-  id              String     @id @default(uuid()) @db.Uuid
+  id              String     @id @default(uuid()) //@db.Uuid
   username        String     @unique
   profileUpdated  Boolean    @default(false)
   accountVerified DateTime?
@@ -50,11 +50,11 @@ model User {
 
 // Represent Human
 model Person {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(uuid()) //@db.Uuid
   firstName   String?
   lastName    String?
   surname     String?
-  userId      String?  @unique @db.Uuid
+  userId      String?  @unique //@db.Uuid
   avatarUrl   String?
   phoneNumber String   @unique
   email       String   @unique
@@ -82,8 +82,8 @@ enum Gender {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
+  id        String   @id @default(uuid()) //@db.Uuid
+  userId    String  // @db.Uuid
   user      User     @relation(fields: [userId], references: [id])
   action    String
   entity    String
