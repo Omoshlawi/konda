@@ -8,7 +8,7 @@ import logger from "@/services/logger";
 import router from "./routes";
 import { handleErrorsMiddleWare } from "./middlewares/handleErrors";
 import { setUpSocketNamespacesAndSubscribeToEvents } from "./socket";
-import { subscribeToMQTTTopics } from "./queue";
+import { subscribeToMQTTTopicsAndEvents } from "./queue";
 import expressHttpServer from "./services/express-http-server";
 
 export interface ServerAddress {
@@ -41,7 +41,7 @@ export default class ApplicationServer {
     logger.info(
       `[+]${configuration.name}:${configuration.version} Subscribing to mqtt topics`
     );
-    subscribeToMQTTTopics();
+    subscribeToMQTTTopicsAndEvents();
   }
 
   private setupMiddlewares(): void {

@@ -22,9 +22,15 @@ export const sendSocketMessage = (
   if (namespace) {
     const _namespace = `/ws${namespace}`;
     socketIO.of(_namespace).emit(event, ...args);
-    logger.info(`[ws:send] Sent to '${_namespace}' socket namespace`);
+    logger.info(
+      `[ws:send] Sent '${JSON.stringify(
+        args
+      )}' to '${_namespace}' socket namespace`
+    );
   } else {
     socketIO.emit(event, ...args);
-    logger.info(`[ws:send] Sent to ${event} (no namespace)`);
+    logger.info(
+      `[ws:send] Sent '${JSON.stringify(args)}' to ${event} (no namespace)`
+    );
   }
 };
