@@ -1,8 +1,6 @@
 import { UsersModel } from "@/models";
 import { UserFilterSchema } from "@/schema";
-import {
-  getMultipleOperationCustomRepresentationQeury,
-} from "@/utils/db";
+import { getMultipleOperationCustomRepresentationQeury } from "@/utils/db";
 import { APIException } from "@/utils/exceptions";
 import { Request, Response, NextFunction } from "express";
 
@@ -32,6 +30,7 @@ export const getUsers = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const { search } = validation.data;
+    // TODO uncoment mode when in postresql
     const results = await UsersModel.findMany({
       where: {
         AND: [
@@ -39,30 +38,50 @@ export const getUsers = async (
           {
             OR: search
               ? [
-                  { username: { contains: search, mode: "insensitive" } },
                   {
-                    person: {
-                      email: { contains: search, mode: "insensitive" },
+                    username: {
+                      contains: search,
+                      //  mode: "insensitive"
                     },
                   },
                   {
                     person: {
-                      phoneNumber: { contains: search, mode: "insensitive" },
+                      email: {
+                        contains: search,
+                        //  mode: "insensitive"
+                      },
                     },
                   },
                   {
                     person: {
-                      firstName: { contains: search, mode: "insensitive" },
+                      phoneNumber: {
+                        contains: search,
+                        // mode: "insensitive"
+                      },
                     },
                   },
                   {
                     person: {
-                      lastName: { contains: search, mode: "insensitive" },
+                      firstName: {
+                        contains: search,
+                        //  mode: "insensitive"
+                      },
                     },
                   },
                   {
                     person: {
-                      surname: { contains: search, mode: "insensitive" },
+                      lastName: {
+                        contains: search,
+                        //  mode: "insensitive"
+                      },
+                    },
+                  },
+                  {
+                    person: {
+                      surname: {
+                        contains: search,
+                        //  mode: "insensitive"
+                      },
                     },
                   },
                 ]
