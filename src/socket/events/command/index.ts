@@ -7,7 +7,7 @@ const commandEvents = (
 ) => {
   // receives socket object that is contexted to the namespace, any emit gies only to namespace cmd
   logger.info(
-    `New Client comnnected to command namespace: ${socket.conn.remoteAddress}`
+    `[ws:cmd]New Client comnnected to command namespace: ${socket.conn.remoteAddress}`
   );
   socket.on("new_connection", (connectedClient) => {
     socket.broadcast.emit("new_connection", connectedClient);

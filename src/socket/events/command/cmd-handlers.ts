@@ -8,6 +8,6 @@ export const onCommand = (
   cmd: any
 ) => {
   // command input from end user
-  logger.info("Command received from Received: ", cmd);
+  logger.info(`[ws:oncmd]:Command received from client user: ${cmd}`);
   mqttClient.publish(MQTT_TOPICS.CMD_BROADCAST, cmd, { qos: 2 });
 };

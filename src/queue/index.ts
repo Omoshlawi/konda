@@ -34,8 +34,8 @@ export const subscribeToMQTTTopics = () => {
         break;
       case MQTT_TOPICS.CMD_BROADCAST:
         // Command output from iot device
-        logger.info(`Command data received: ${data}`);
-        sendSocketMessage("cmd", undefined, data);
+        logger.info(`Command output data received: ${data}`);
+        sendSocketMessage("cmd", "/cmd", data);
         break;
       default:
         logger.warn(`Unhandled topic: ${topic}`);
