@@ -32,6 +32,7 @@ export const subscribeToMQTTTopicsAndEvents = () => {
   mqttClient.on("message", (topic, payload, packet) => {
     logger.info(`[MQTT:message]: ${topic}`);
     mqttEventsEmitter.emit(topic, payload, packet);
+    
   });
 
   // Subscribe to mqtt emmite events
