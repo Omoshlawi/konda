@@ -13,18 +13,18 @@ datasource db {
 
 model Account {
   id                String   @id @default(uuid()) //@db.Uuid
-  userId            String   //@db.Uuid
+  userId            String //@db.Uuid
   type              String
   provider          String
   providerAccountId String   @default(cuid())
-  refresh_token     String?    //@db.Text
+  refresh_token     String? //@db.Text
   refresh_expire_at Int?
-  access_token      String?  //@db.Text
+  access_token      String? //@db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
   voided            Boolean  @default(false)
-  id_token          String?  //@db.Text
+  id_token          String? //@db.Text
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -83,11 +83,132 @@ enum Gender {
 
 model AuditLog {
   id        String   @id @default(uuid()) //@db.Uuid
-  userId    String  // @db.Uuid
+  userId    String // @db.Uuid
   user      User     @relation(fields: [userId], references: [id])
   action    String
   entity    String
   entityId  String
   details   Json
   createdAt DateTime @default(now())
+}
+
+model Fleet {
+  id          String   @id @default(uuid())
+  name        String
+  vehicleType String // Bus, Matatu, Shuttle, etc.
+  capacity    Int
+  plateNumber String   @unique
+  operatorId  String
+  operator    Operator @relation(fields: [operatorId], references: [id])
+  status      String // Active, Inactive, Maintenance
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  voided      Boolean  @default(false)
+  trips       Trip[]
+}
+
+model Route {
+  id               String    @id @default(uuid())
+  name             String // e.g., "CBD - Rongai"
+  startPoint       String
+  endPoint         String
+  distanceKm       Float
+  estimatedTimeMin Int
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  stages           Stage[]
+  pricing          Pricing[]
+  trips            Trip[]
+  voided           Boolean   @default(false)
+}
+
+model Stage {
+  id        String   @id @default(uuid())
+  name      String
+  routeId   String
+  route     Route    @relation(fields: [routeId], references: [id])
+  order     Int
+  latitude  Decimal
+  longitude Decimal
+  radius    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fromTickets Ticket[] @relation("FromStage")
+  toTickets   Ticket[] @relation("ToStage")
+
+  fromPricings Pricing[] @relation("FromPricing")
+  toPricings   Pricing[] @relation("ToPricing")
+  trips        Trip[]
+}
+
+model Pricing {
+  id                 String   @id @default(uuid())
+  routeId            String
+  fromStageId        String
+  toStageId          String
+  basePrice          Float
+  dynamicPriceFactor Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  route     Route @relation(fields: [routeId], references: [id])
+  fromStage Stage @relation(fields: [fromStageId], references: [id], name: "FromPricing")
+  toStage   Stage @relation(fields: [toStageId], references: [id], name: "ToPricing")
+}
+
+model Trip {
+  id                String    @id @default(uuid())
+  fleetId           String
+  routeId           String
+  currentStageId    String?
+  passengersOnboard Int
+  status            String // Ongoing, Completed, Cancelled
+  startedAt         DateTime?
+  endedAt           DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  voided            Boolean   @default(false)
+
+  fleet        Fleet    @relation(fields: [fleetId], references: [id])
+  route        Route    @relation(fields: [routeId], references: [id])
+  currentStage Stage?   @relation(fields: [currentStageId], references: [id])
+  tickets      Ticket[]
+}
+
+model Passenger {
+  id                     String   @id @default(uuid())
+  name                   String
+  contact                String   @unique
+  preferredPaymentMethod String // Cash, Mpesa, Card
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  tickets                Ticket[]
+  voided                 Boolean  @default(false)
+}
+
+model Ticket {
+  id            String   @id @default(uuid())
+  passengerId   String
+  tripId        String
+  fromStageId   String
+  toStageId     String
+  pricePaid     Float
+  paymentStatus String // Paid, Pending, Failed
+  issuedAt      DateTime @default(now())
+
+  passenger Passenger @relation(fields: [passengerId], references: [id])
+  trip      Trip      @relation(fields: [tripId], references: [id])
+  fromStage Stage     @relation(fields: [fromStageId], references: [id], name: "FromStage")
+  toStage   Stage     @relation(fields: [toStageId], references: [id], name: "ToStage")
+}
+
+model Operator {
+  id        String   @id @default(uuid())
+  name      String // Name of the operator (e.g., "supermetro")
+  contact   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fleets    Fleet[]
+  voided    Boolean  @default(false)
 }
