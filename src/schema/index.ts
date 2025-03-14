@@ -31,3 +31,47 @@ export const OauthAuthSchema = z.object({
 export const UserFilterSchema = z.object({
   search: z.string().optional(),
 });
+
+export const OperatorSchema = z.object({
+  name: z.string().min(1, "Required"),
+  contact: z.string().min(1, "Required").uuid(),
+});
+
+export const FleetSchema = z.object({
+  name: z.string().min(1, "Required"),
+  vehicleType: z.enum(["Bus", "Matatu", "Shuttle"]),
+  capacity: z.string().min(1, "Required"),
+  plateNumber: z.string().min(1, "Required"),
+  operatorId: z.string().min(1, "Required").uuid(),
+  status: z.enum(["Active", "Inactive", "Maintenance"]),
+});
+
+export const RouteSchema = z.object({
+  name: z.string().min(1, "Required"),
+  startPoint: z.string().min(1, "Required"),
+  endPoint: z.string().min(1, "Required"),
+  distanceKm: z.number().positive("Must be a positive number"),
+  estimatedTimeMin: z.number().int().positive("Must be a positive integer"),
+});
+
+export const StagesShema = z.object({
+  name: z.string().min(1, "Required"),
+  latitude: z.number().positive("Must be a positive number"),
+  longitude: z.number().positive("Must be a positive number"),
+  radius: z.number().int().positive("Must be a positive integer"),
+});
+
+export const RouteStageschema = z.object({
+  routeId: z.string().min(1, "Required").uuid(),
+  order: z.number().int().positive("Must be a positive integer"),
+  stageId: z.string().min(1, "Required").uuid(),
+});
+
+export const RoutePricingSchema = z.object({
+  routeId: z.string().min(1, "Required").uuid(),
+  fromStageId: z.string().min(1, "Required").uuid(),
+  toStageId: z.string().min(1, "Required").uuid(),
+  price: z.number().positive("Must be a positive number"),
+  timeStart: z.string().min(1, "Required"),
+  timeEnd: z.string().min(1, "Required"),
+});
