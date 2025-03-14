@@ -40,7 +40,7 @@ export const OperatorSchema = z.object({
 export const FleetSchema = z.object({
   name: z.string().min(1, "Required"),
   vehicleType: z.enum(["Bus", "Matatu", "Shuttle"]),
-  capacity: z.string().min(1, "Required"),
+  capacity: z.number({ coerce: true }),
   plateNumber: z.string().min(1, "Required"),
   operatorId: z.string().min(1, "Required").uuid(),
   status: z.enum(["Active", "Inactive", "Maintenance"]),
