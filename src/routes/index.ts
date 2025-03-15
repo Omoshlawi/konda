@@ -10,6 +10,7 @@ import routeStageRouter from "./route-stage";
 import routePricingRouter from "./route-pricing";
 import locationsRouter from "./locations";
 
+
 const router = Router();
 
 router.get("/auth/refresh-token", refreshToken);

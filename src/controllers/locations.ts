@@ -42,26 +42,6 @@ export const getCounties = async (
                       //  mode: "insensitive"
                     },
                   },
-                  {
-                    subCounties: {
-                      some: {
-                        name: {
-                          contains: search,
-                          // mode: "insensitive"
-                        },
-                      },
-                    },
-                  },
-                  {
-                    wards: {
-                      some: {
-                        name: {
-                          contains: search,
-                          // mode: "insensitive"
-                        },
-                      },
-                    },
-                  },
                 ]
               : undefined,
           },
@@ -102,32 +82,6 @@ export const getSubcounties = async (
                     code: {
                       contains: search,
                       //  mode: "insensitive"
-                    },
-                  },
-                  {
-                    county: {
-                      name: {
-                        contains: county,
-                        //  mode: "insensitive"
-                      },
-                    },
-                  },
-                  {
-                    county: {
-                      capital: {
-                        contains: county,
-                        // mode: "insensitive"
-                      },
-                    },
-                  },
-                  {
-                    wards: {
-                      some: {
-                        name: {
-                          contains: search,
-                          //  mode: "insensitive"
-                        },
-                      },
                     },
                   },
                 ]
@@ -175,38 +129,6 @@ export const getWards = async (
                     code: {
                       contains: search,
                       //  mode: "insensitive"
-                    },
-                  },
-                  {
-                    county: {
-                      name: {
-                        contains: county,
-                        //  mode: "insensitive"
-                      },
-                    },
-                  },
-                  {
-                    county: {
-                      capital: {
-                        contains: county,
-                        //  mode: "insensitive"
-                      },
-                    },
-                  },
-                  {
-                    subCounty: {
-                      name: {
-                        contains: subCounty,
-                        // mode: "insensitive"
-                      },
-                    },
-                  },
-                  {
-                    subCounty: {
-                      code: {
-                        contains: subCounty,
-                        //  mode: "insensitive"
-                      },
                     },
                   },
                 ]
