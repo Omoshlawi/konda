@@ -60,9 +60,14 @@ export const RouteSchema = z.object({
 
 export const StagesShema = z.object({
   name: z.string().min(1, "Required"),
-  latitude: z.number().positive("Must be a positive number"),
-  longitude: z.number().positive("Must be a positive number"),
-  radius: z.number().int().positive("Must be a positive integer"),
+  latitude: z.number({ coerce: true }),
+  longitude: z.number({ coerce: true }),
+  radius: z
+    .number({ coerce: true })
+    .int()
+    .positive("Must be a positive integer"),
+  countyCode: z.string().min(1, "Required"),
+  subCountyCode: z.string().min(1, "Required"),
 });
 
 export const RouteStageschema = z.object({
@@ -78,4 +83,30 @@ export const RoutePricingSchema = z.object({
   price: z.number().positive("Must be a positive number"),
   timeStart: z.string().min(1, "Required"),
   timeEnd: z.string().min(1, "Required"),
+});
+
+
+
+export const CountyFilterSchema = z.object({
+  code: z.string().optional(),
+  name: z.string().optional(),
+  search: z.string().optional(),
+});
+
+export const SubCountyFilterSchema = z.object({
+  code: z.string().optional(),
+  name: z.string().optional(),
+  countyCode: z.string().optional(),
+  county: z.string().optional(),
+  search: z.string().optional(),
+});
+
+export const WardFilterSchema = z.object({
+  code: z.string().optional(),
+  name: z.string().optional(),
+  countyCode: z.string().optional(),
+  subCountyCode: z.string().optional(),
+  county: z.string().optional(),
+  subCounty: z.string().optional(),
+  search: z.string().optional(),
 });
