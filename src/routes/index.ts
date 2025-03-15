@@ -8,6 +8,7 @@ import routeRouter from "./route";
 import stageRouter from "./stage";
 import routeStageRouter from "./route-stage";
 import routePricingRouter from "./route-pricing";
+import locationsRouter from "./locations";
 
 const router = Router();
 
@@ -21,4 +22,5 @@ router.use("/route", routeRouter);
 router.use("/stage", stageRouter);
 router.use("/route-stage", routeStageRouter);
 router.use("/route-pricing", routePricingRouter);
+router.use("/places", locationsRouter);
 export default router;
