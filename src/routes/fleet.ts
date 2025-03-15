@@ -9,15 +9,32 @@ import {
   updateFleet,
 } from "../controllers/fleets";
 import { validateUUIDPathParam } from "@/middlewares";
+import authenticate from "@/middlewares/authentication";
 
 const router = Router({ mergeParams: true });
 
 router.get("/", getFleets);
-router.post("/", addFleet);
+router.post("/", [authenticate], addFleet);
 router.get("/:fleetId", [validateUUIDPathParam("fleetId")], getFleet);
-router.patch("/:fleetId", [validateUUIDPathParam("fleetId")], patchFleet);
-router.put("/:fleetId", [validateUUIDPathParam("fleetId")], updateFleet);
-router.delete("/:fleetId", [validateUUIDPathParam("fleetId")], deleteFleet);
-router.purge("/:fleetId", [validateUUIDPathParam("fleetId")], purgeFleet);
+router.patch(
+  "/:fleetId",
+  [validateUUIDPathParam("fleetId"), authenticate],
+  patchFleet
+);
+router.put(
+  "/:fleetId",
+  [validateUUIDPathParam("fleetId"), authenticate],
+  updateFleet
+);
+router.delete(
+  "/:fleetId",
+  [validateUUIDPathParam("fleetId"), authenticate],
+  deleteFleet
+);
+router.purge(
+  "/:fleetId",
+  [validateUUIDPathParam("fleetId"), authenticate],
+  purgeFleet
+);
 
 export default router;

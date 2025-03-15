@@ -46,7 +46,10 @@ export const addFleet = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const item = await FleetsModel.create({
-      data: validation.data,
+      data: {
+        ...validation.data,
+        plateNumber: validation.data.plateNumber.toUpperCase(),
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
@@ -66,7 +69,10 @@ export const updateFleet = async (
       throw new APIException(400, validation.error.format());
     const item = await FleetsModel.update({
       where: { id: req.params.fleetId, voided: false },
-      data: validation.data,
+      data: {
+        ...validation.data,
+        plateNumber: validation.data.plateNumber.toUpperCase(),
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
@@ -86,7 +92,10 @@ export const patchFleet = async (
       throw new APIException(400, validation.error.format());
     const item = await FleetsModel.update({
       where: { id: req.params.fleetId, voided: false },
-      data: validation.data,
+      data: {
+        ...validation.data,
+        plateNumber: validation.data?.plateNumber?.toUpperCase(),
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);

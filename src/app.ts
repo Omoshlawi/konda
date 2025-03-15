@@ -5,11 +5,12 @@ import morgan from "morgan";
 import cors from "cors";
 import { toNumber } from "lodash";
 import logger from "@/services/logger";
-import router from "./routes";
-import { handleErrorsMiddleWare } from "./middlewares/handleErrors";
-import { setUpSocketNamespacesAndSubscribeToEvents } from "./socket";
-import { subscribeToMQTTTopicsAndEvents } from "./queue";
-import expressHttpServer from "./services/express-http-server";
+import router from "@/routes";
+import { handleErrorsMiddleWare, cookieToHeader } from "@/middlewares";
+import { setUpSocketNamespacesAndSubscribeToEvents } from "@/socket";
+import { subscribeToMQTTTopicsAndEvents } from "@/queue";
+import expressHttpServer from "@/services/express-http-server";
+import cookieParser from "cookie-parser";
 
 export interface ServerAddress {
   address: string;
@@ -54,6 +55,8 @@ export default class ApplicationServer {
     this.app.use(cors());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(cookieParser(configuration.auth.auth_secrete));
+    this.app.use(cookieToHeader); // Convert session cookie to session header
   }
 
   private setupRoutes(): void {

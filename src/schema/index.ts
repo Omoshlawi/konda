@@ -1,3 +1,4 @@
+import { PHONE_NUMBER_REGEX, PLATE_NUMBER_REGEX } from "@/utils/constants";
 import { z } from "zod";
 export const Register = z
   .object({
@@ -34,14 +35,14 @@ export const UserFilterSchema = z.object({
 
 export const OperatorSchema = z.object({
   name: z.string().min(1, "Required"),
-  contact: z.string().min(1, "Required").uuid(),
+  contact: z.string().regex(PHONE_NUMBER_REGEX).min(1, "Required"),
 });
 
 export const FleetSchema = z.object({
   name: z.string().min(1, "Required"),
   vehicleType: z.enum(["Bus", "Matatu", "Shuttle"]),
   capacity: z.number({ coerce: true }),
-  plateNumber: z.string().min(1, "Required"),
+  plateNumber: z.string().regex(PLATE_NUMBER_REGEX).min(1, "Required"),
   operatorId: z.string().min(1, "Required").uuid(),
   status: z.enum(["Active", "Inactive", "Maintenance"]),
 });
@@ -50,8 +51,11 @@ export const RouteSchema = z.object({
   name: z.string().min(1, "Required"),
   startPoint: z.string().min(1, "Required"),
   endPoint: z.string().min(1, "Required"),
-  distanceKm: z.number().positive("Must be a positive number"),
-  estimatedTimeMin: z.number().int().positive("Must be a positive integer"),
+  distanceKm: z.number({ coerce: true }).positive("Must be a positive number"),
+  estimatedTimeMin: z
+    .number({ coerce: true })
+    .int()
+    .positive("Must be a positive integer"),
 });
 
 export const StagesShema = z.object({

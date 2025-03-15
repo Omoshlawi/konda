@@ -80,6 +80,56 @@ enum Gender {
   Unknown
 }
 
+model County {
+  code     String  @id @unique
+  name     String
+  capital  String?
+  metadata Json?
+
+  voided      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  subCounties SubCounty[]
+  wards       Ward[]
+  stages      Stage[]
+
+  @@index([code, name])
+}
+
+model SubCounty {
+  code String @id @unique
+  name String
+
+  countyCode String
+  county     County @relation(fields: [countyCode], references: [code], onDelete: Cascade)
+  metadata   Json?
+
+  voided    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  wards     Ward[]
+  stages    Stage[]
+
+  @@index([countyCode, name])
+}
+
+model Ward {
+  code String @id @unique
+  name String
+
+  countyCode    String
+  county        County    @relation(fields: [countyCode], references: [code], onDelete: Cascade)
+  subCountyCode String
+  subCounty     SubCounty @relation(fields: [subCountyCode], references: [code], onDelete: Cascade)
+  metadata      Json?
+
+  voided    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subCountyCode, name])
+}
+
 model Operator {
   id        String   @id @default(uuid())
   name      String // Name of the operator (e.g., "supermetro")
@@ -103,6 +153,8 @@ model Fleet {
   updatedAt   DateTime @updatedAt
   voided      Boolean  @default(false)
   trips       Trip[]
+
+  @@unique([name, operatorId])
 }
 
 model Route {
@@ -122,19 +174,23 @@ model Route {
 
 // Like a physical places, never changes regardles if what
 model Stage {
-  id           String         @id @default(uuid())
-  name         String
-  latitude     Decimal
-  longitude    Decimal
-  radius       Int
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  voided       Boolean        @default(false)
-  routes       RouteStage[]
-  fromPricings RoutePricing[] @relation("FromPricing")
-  toPricings   RoutePricing[] @relation("ToPricing")
-  fromTrips    Trip[]         @relation("FromStage")
-  toTrips      Trip[]         @relation("ToStage")
+  id            String         @id @default(uuid())
+  name          String
+  countyCode    String
+  subCountyCode String
+  latitude      Decimal
+  longitude     Decimal
+  radius        Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  voided        Boolean        @default(false)
+  routes        RouteStage[]
+  fromPricings  RoutePricing[] @relation("FromPricing")
+  toPricings    RoutePricing[] @relation("ToPricing")
+  fromTrips     Trip[]         @relation("FromStage")
+  toTrips       Trip[]         @relation("ToStage")
+  county        County         @relation(fields: [countyCode], onDelete: Cascade, references: [code])
+  subCounty     SubCounty      @relation(fields: [subCountyCode], onDelete: Cascade, references: [code])
 }
 
 model RouteStage {
@@ -142,12 +198,12 @@ model RouteStage {
   routeId String
   order   Int
   stageId String
-  
+
   //  fromTickets Ticket[] @relation("FromStage")
   // toTickets   Ticket[] @relation("ToStage")
 
-  stage   Stage  @relation(references: [id], fields: [stageId], onDelete: Cascade)
-  route   Route  @relation(fields: [routeId], references: [id])
+  stage     Stage    @relation(references: [id], fields: [stageId], onDelete: Cascade)
+  route     Route    @relation(fields: [routeId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   voided    Boolean  @default(false)
@@ -196,8 +252,6 @@ model Trip {
 }
 
 // TODO Add Reviews,payment
-
-
 
 // model Passenger {
 //   id                     String   @id @default(uuid())

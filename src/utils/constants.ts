@@ -41,6 +41,8 @@ export const configuration = {
 };
 
 export const PHONE_NUMBER_REGEX = /^(\+?254|0)((7|1)\d{8})$/;
+export const PLATE_NUMBER_REGEX = /^(K[A-Z]{2} \d{3}[A-Z])$|^(\d{3} CD \d{2})$/i;
+
 export const UUID_REGEX =
   /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/;
 export const SEMANTIC_VERSION_REGEX =

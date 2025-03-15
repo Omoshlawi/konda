@@ -10,7 +10,8 @@
     "db:migrate": "prisma migrate dev",
     "build": "tsc && tsc-alias",
     "clean": "rimraf dist",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "db:seed": "node seed.js"
   },
   "author": "Laurent Ouma",
   "dependencies": {
