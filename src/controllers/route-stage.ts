@@ -12,6 +12,7 @@ export const getRouteStages = async (
   try {
     const results = await RouteStagesModel.findMany({
       where: { voided: false, routeId: req.params.routeId! },
+      orderBy: { order: "asc" },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json({ results });
