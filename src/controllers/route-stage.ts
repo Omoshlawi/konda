@@ -11,7 +11,7 @@ export const getRouteStages = async (
 ) => {
   try {
     const results = await RouteStagesModel.findMany({
-      where: { voided: false },
+      where: { voided: false, routeId: req.params.routeId! },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json({ results });
@@ -27,7 +27,11 @@ export const getRouteStage = async (
 ) => {
   try {
     const item = await RouteStagesModel.findUniqueOrThrow({
-      where: { id: req.params.routeStageId, voided: false },
+      where: {
+        id: req.params.routeStageId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
@@ -46,7 +50,7 @@ export const addRouteStage = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const item = await RouteStagesModel.create({
-      data: validation.data,
+      data: { ...validation.data, routeId: req.params.routeId! },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
@@ -65,7 +69,11 @@ export const updateRouteStage = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const item = await RouteStagesModel.update({
-      where: { id: req.params.routeStageId, voided: false },
+      where: {
+        id: req.params.routeStageId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       data: validation.data,
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
@@ -87,7 +95,11 @@ export const patchRouteStage = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const item = await RouteStagesModel.update({
-      where: { id: req.params.routeStageId, voided: false },
+      where: {
+        id: req.params.routeStageId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       data: validation.data,
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
@@ -104,7 +116,11 @@ export const deleteRouteStage = async (
 ) => {
   try {
     const item = await RouteStagesModel.update({
-      where: { id: req.params.routeStageId, voided: false },
+      where: {
+        id: req.params.routeStageId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       data: {
         voided: true,
       },
@@ -123,7 +139,11 @@ export const purgeRouteStage = async (
 ) => {
   try {
     const item = await RouteStagesModel.delete({
-      where: { id: req.params.routeStageId, voided: false },
+      where: {
+        id: req.params.routeStageId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);

@@ -11,7 +11,7 @@ export const getRoutePricings = async (
 ) => {
   try {
     const results = await RoutePricingsModel.findMany({
-      where: { voided: false },
+      where: { voided: false, routeId: req.params.routeId! },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json({ results });
@@ -27,7 +27,11 @@ export const getRoutePricing = async (
 ) => {
   try {
     const item = await RoutePricingsModel.findUniqueOrThrow({
-      where: { id: req.params.routePricingId, voided: false },
+      where: {
+        id: req.params.routePricingId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
@@ -46,7 +50,7 @@ export const addRoutePricing = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const item = await RoutePricingsModel.create({
-      data: validation.data,
+      data: { ...validation.data, routeId: req.params.routeId! },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
@@ -65,7 +69,11 @@ export const updateRoutePricing = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const item = await RoutePricingsModel.update({
-      where: { id: req.params.routePricingId, voided: false },
+      where: {
+        id: req.params.routePricingId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       data: validation.data,
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
@@ -87,7 +95,11 @@ export const patchRoutePricing = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const item = await RoutePricingsModel.update({
-      where: { id: req.params.routePricingId, voided: false },
+      where: {
+        id: req.params.routePricingId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       data: validation.data,
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
@@ -104,7 +116,11 @@ export const deleteRoutePricing = async (
 ) => {
   try {
     const item = await RoutePricingsModel.update({
-      where: { id: req.params.routePricingId, voided: false },
+      where: {
+        id: req.params.routePricingId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       data: {
         voided: true,
       },
@@ -123,7 +139,11 @@ export const purgeRoutePricing = async (
 ) => {
   try {
     const item = await RoutePricingsModel.delete({
-      where: { id: req.params.routePricingId, voided: false },
+      where: {
+        id: req.params.routePricingId,
+        voided: false,
+        routeId: req.params.routeId!,
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);

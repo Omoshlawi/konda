@@ -71,21 +71,17 @@ export const StagesShema = z.object({
 });
 
 export const RouteStageschema = z.object({
-  routeId: z.string().min(1, "Required").uuid(),
   order: z.number().int().positive("Must be a positive integer"),
   stageId: z.string().min(1, "Required").uuid(),
 });
 
 export const RoutePricingSchema = z.object({
-  routeId: z.string().min(1, "Required").uuid(),
   fromStageId: z.string().min(1, "Required").uuid(),
   toStageId: z.string().min(1, "Required").uuid(),
   price: z.number().positive("Must be a positive number"),
   timeStart: z.string().min(1, "Required"),
   timeEnd: z.string().min(1, "Required"),
 });
-
-
 
 export const CountyFilterSchema = z.object({
   code: z.string().optional(),
