@@ -1,11 +1,16 @@
 import { sendSocketMessage } from "@/socket";
 import {
   createRedisStreamConsumer,
+  getLatestEntriesFromStream,
   MessageHandler,
   RedisStreamConsumerOptions,
 } from "@/utils/stream";
 import { MQTT_TOPICS } from ".";
-import { FleetRouteInterStageMovement } from "@/socket/events/types";
+import {
+  FleetRouteInterStageMovement,
+  GPSSesorData,
+} from "@/socket/events/types";
+import logger from "@/services/logger";
 
 const fleetStream = async () => {
   const fleetStreamOptions: RedisStreamConsumerOptions = {
@@ -45,11 +50,20 @@ const mqttStream = async () => {
     { data: string },
     { topic: string; timeStamp: string }
   > = async (streamKey, messageId, { data }, metadata) => {
-    const payload: { latitude: number; longitude: number; fleet: string } =
-      JSON.parse(data);
-    console.log("GPS", payload);
+    const payload: GPSSesorData = JSON.parse(data);
+    // 1 Get last known values
+    const lastEntry =
+      await getLatestEntriesFromStream<FleetRouteInterStageMovement>(
+        "fleet_movement_stream",
+        ({ data: { fleetNo: fln } }) => payload.fleetNo === fln
+      );
 
+    if (lastEntry.length === 0) {
+      logger.info(`No movement history for fleet: ${payload.fleetNo}`);
+    }
     // TODO Stream changes to users subscribed to realtime cordinate changes for current fleet
+
+    
     // Check if curr location is in boundary of next stage and if so update currStage to the next and next stage query from db abd store to next
     // rEMEMBER TO NORTIFIER MICROCONTROLLER AND End user subscribed
   };

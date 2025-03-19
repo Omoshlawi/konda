@@ -10,6 +10,7 @@ import {
 } from "../controllers/fleets";
 import { validateUUIDPathParam } from "@/middlewares";
 import authenticate from "@/middlewares/authentication";
+import fleetRouter from "./fleet-routes";
 
 const router = Router({ mergeParams: true });
 
@@ -36,5 +37,6 @@ router.purge(
   [validateUUIDPathParam("fleetId"), authenticate],
   purgeFleet
 );
+router.use("/:fleetId/routes", [validateUUIDPathParam("fleetId")], fleetRouter);
 
 export default router;

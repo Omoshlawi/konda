@@ -6,6 +6,7 @@ export const AccountModel = db.account;
 export const VerificationTokensModel = db.verificationToken;
 export const FleetsModel = db.fleet;
 export const RoutesModel = db.route;
+export const FleetRoutesModel = db.fleetRoute;
 export const StagesModel = db.stage;
 export const RouteStagesModel = db.routeStage;
 export const RoutePricingsModel = db.routePricing;

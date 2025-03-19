@@ -75,6 +75,10 @@ export const RouteStageschema = z.object({
   stageId: z.string().min(1, "Required").uuid(),
 });
 
+export const FleetRouteSchema = z.object({
+  routeId: z.string().min(1, "Required").uuid(),
+});
+
 export const RoutePricingSchema = z.object({
   fromStageId: z.string().min(1, "Required").uuid(),
   toStageId: z.string().min(1, "Required").uuid(),
