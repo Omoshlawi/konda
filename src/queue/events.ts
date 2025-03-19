@@ -7,7 +7,7 @@ export const onCommand = (payload: Buffer<ArrayBufferLike>, packet: Packet) => {
     `[MQTT:oncommand]Received command from device: ${payload.toString()} `
   );
 
-  sendSocketMessage("cmd", "/cmd", payload.toString());
+  sendSocketMessage("cmd", "/cmd", undefined, payload.toString());
 };
 
 export const onSesorTemprature = (

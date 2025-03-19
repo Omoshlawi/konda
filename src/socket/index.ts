@@ -20,18 +20,25 @@ export const setUpSocketNamespacesAndSubscribeToEvents = () => {
 export const sendSocketMessage = (
   event: string,
   namespace?: string,
+  room?: string,
   ...args: any[]
 ) => {
   if (namespace) {
     const _namespace = `/ws${namespace}`;
-    socketIO.of(_namespace).emit(event, ...args);
+    if (room)
+      socketIO
+        .of(_namespace)
+        .to(room)
+        .emit(event, ...args);
+    else socketIO.of(_namespace).emit(event, ...args);
     logger.info(
       `[ws:send] Sent '${JSON.stringify(
         args
-      )}' to '${_namespace}' socket namespace`
+      )}' to '${_namespace}' socket namespace ${room ? "in room " + room : ""}`
     );
   } else {
-    socketIO.emit(event, ...args);
+    if (room) socketIO.to(room).emit(event, ...args);
+    else socketIO.emit(event, ...args);
     logger.info(
       `[ws:send] Sent '${JSON.stringify(args)}' to ${event} (no namespace)`
     );

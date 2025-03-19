@@ -18,7 +18,7 @@ const createMQTTClient = () => {
   });
   client.on("error", (err) => {
     logger.error(
-      `[MQTT:error]: Error initializing mqtt client: ${JSON.stringify(err)}`
+      `[MQTT:error]: Error initializing mqtt client: ${err?.message}`
     );
   });
 

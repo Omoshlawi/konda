@@ -2,6 +2,7 @@ import logger from "@/services/logger";
 import mqttClient from "@/services/mqtt";
 import EventEmitter from "events";
 import { onCommand, onSesorGps, onSesorTemprature } from "./events";
+import { publishToRedisStream } from "@/utils/stream";
 
 export const MQTT_TOPICS = Object.freeze({
   GPS: "sensors/gps",
@@ -27,18 +28,26 @@ export const subscribeToMQTTTopicsAndEvents = () => {
     mqttClient.reconnect();
   });
 
-  const mqttEventsEmitter = new EventEmitter();
   // Listen to messages and emit them as topic based events
   mqttClient.on("message", (topic, payload, packet) => {
     logger.info(`[MQTT:message]: ${topic}`);
-    mqttEventsEmitter.emit(topic, payload, packet);
-    
+    let _payload;
+    let contentType: "text" | "binary" = "text";
+    try {
+      _payload = JSON.parse(payload.toString("utf-8")); // Try JSON first
+    } catch (error) {
+      logger.warn(
+        `Non-JSON payload detected on topic ${topic}, encoding as Base64.`
+      );
+      _payload = payload.toString("base64"); // Encode binary as Base64
+      contentType = "binary";
+    }
+    publishToRedisStream(
+      topic.replace("/", "_"),
+      { data: contentType === "binary" ? _payload : JSON.stringify(_payload) },
+      { topic, contentType, timestamp: Date.now() }
+    );
   });
-
-  // Subscribe to mqtt emmite events
-  mqttEventsEmitter.on(MQTT_TOPICS.CMD_BROADCAST, onCommand);
-  mqttEventsEmitter.on(MQTT_TOPICS.TEMPERATURE, onSesorTemprature);
-  mqttEventsEmitter.on(MQTT_TOPICS.GPS, onSesorGps);
 };
 
 export const unsubscribeFromMQTTTopics = () => {

@@ -9,7 +9,7 @@
 
 import logger from "@/services/logger";
 import redis from "@/services/redis";
-import { flattenObject } from "../helpers";
+import { flattenObject, unflattenArray } from "../helpers";
 
 /**
  * Publishes a message to a Redis Stream.
@@ -43,7 +43,7 @@ export const publishToRedisStream = async (
 ): Promise<string> => {
   try {
     // Combine the message and metadata into a single object
-    const messageData = { payload, metadata, timestamp: Date.now() };
+    const messageData = { payload, metadata };
 
     // Convert the message data into an array of key-value pairs e.g {name: value } to [name, value]
     const streamEntry = flattenObject(messageData);
@@ -60,10 +60,62 @@ export const publishToRedisStream = async (
       `Published message to stream "${streamKey}" with ID: ${messageId}`
     );
     return messageId;
-  } catch (err) {
+  } catch (err: any) {
     logger.error(
-      `Error publishing message to stream "${streamKey}":${JSON.stringify(err)}`
+      `Error publishing message to stream "${streamKey}":${err?.message}`
     );
     throw err; // Rethrow the error for the caller to handle
   }
 };
+
+/**
+ * Retrieves the latest entries from a Redis Stream that match a given predicate.
+ *
+ * @param streamName - The name of the Redis Stream.
+ * @param predicate - A function to filter entries. Returns `true` for matching entries.
+ * @param count - The maximum number of entries to return (default: 1).
+ * @param scanWindow - The number of entries to scan from the stream (default: 100).
+ * @returns An array of matching entries, or an empty array if no matches are found.
+ */
+
+export async function getLatestEntriesFromStream<T = Record<string, any>>(
+  streamName: string,
+  predicate: (
+    entry: { id: string; data: T },
+    meta?: Record<string, any>
+  ) => boolean,
+  count: number = 1, // This strictly determines how many entries to return
+  scanWindow: number = 100
+): Promise<{ id: string; data: T }[]> {
+  try {
+    if (count <= 0) return [];
+    const result = await redis.xrevrange(
+      streamName,
+      "+",
+      "-",
+      "COUNT",
+      scanWindow
+    );
+
+    const matchedEntries: { id: string; data: T }[] = [];
+
+    for (const [entryId, fields] of result) {
+      const data = unflattenArray(fields);
+      const entry = { id: entryId, data: data.payload as T };
+
+      if (predicate(entry, data?.metadata)) {
+        matchedEntries.push(entry);
+        if (matchedEntries.length >= count) {
+          break; // Stop once we reach the required number of entries
+        }
+      }
+    }
+
+    return matchedEntries.length > 0 ? matchedEntries : [];
+  } catch (error: any) {
+    logger.error(
+      `Error fetching latest entries from ${streamName} (count=${count}, scanWindow=${scanWindow}):${error?.message}`
+    );
+    return [];
+  }
+}

@@ -25,11 +25,14 @@ export interface RedisStreamConsumerOptions {
  * @param messageId - The ID of the message.
  * @param data - The message data as key-value pairs.
  */
-export type MessageHandler = (
+export type MessageHandler<
+  TPayload extends Record<string, any>,
+  TMeta extends Record<string, any>
+> = (
   streamKey: string,
   messageId: string,
-  payload: Record<string, any>,
-  metadata?: Record<string, any>
+  payload: TPayload,
+  metadata?: TMeta
 ) => Promise<void>;
 
 /**
@@ -74,9 +77,12 @@ export type MessageHandler = (
  * });
  * ```
  */
-export const createRedisStreamConsumer = async (
+export const createRedisStreamConsumer = async <
+  TPayload extends Record<string, any>,
+  TMeta extends Record<string, any>
+>(
   options: RedisStreamConsumerOptions,
-  messageHandler: MessageHandler
+  messageHandler: MessageHandler<TPayload, TMeta>
 ) => {
   const {
     streamKey,
@@ -92,7 +98,7 @@ export const createRedisStreamConsumer = async (
     logger.info(`Consumer group "${groupName}" created or already exists.`);
   } catch (err: any) {
     if (!err.message.includes("BUSYGROUP")) {
-      logger.error(`Error creating consumer group: ${JSON.stringify(err)}`);
+      logger.error(`Error creating consumer group: ${err?.message}`);
       throw err; // Rethrow if it's not a "group already exists" error
     }
   }
@@ -145,8 +151,8 @@ export const createRedisStreamConsumer = async (
           }
         }
       }
-    } catch (err) {
-      logger.error(`Error processing pending messages: ${JSON.stringify(err)}`);
+    } catch (err: any) {
+      logger.error(`Error processing pending messages: ${err?.message}`);
     }
   };
 
@@ -182,8 +188,8 @@ export const createRedisStreamConsumer = async (
           }
         }
       }
-    } catch (err) {
-      logger.error(`Error processing new messages: ${JSON.stringify(err)}`);
+    } catch (err: any) {
+      logger.error(`Error processing new messages: ${err?.message}`);
     }
   };
 
