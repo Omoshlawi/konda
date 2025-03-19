@@ -11,6 +11,7 @@ import { setUpSocketNamespacesAndSubscribeToEvents } from "@/socket";
 import { subscribeToMQTTTopicsAndEvents } from "@/queue";
 import expressHttpServer from "@/services/express-http-server";
 import cookieParser from "cookie-parser";
+import { subscribeToRedisStreams } from "./queue/redis-streams";
 
 export interface ServerAddress {
   address: string;
@@ -27,6 +28,7 @@ export default class ApplicationServer {
     this.setupMiddlewares();
     this.setupRoutes();
     this.setupErrorHandlers();
+    this.subscribeToEventsStreams();
     this.subscribeToMqtt();
     this.initializeSocketIo();
   }
@@ -36,6 +38,13 @@ export default class ApplicationServer {
       `[+]${configuration.name}:${configuration.version} Initializing socketio server`
     );
     setUpSocketNamespacesAndSubscribeToEvents();
+  }
+
+  private subscribeToEventsStreams() {
+    logger.info(
+      `[+]${configuration.name}:${configuration.version} Subscribed to redis streams`
+    );
+    subscribeToRedisStreams();
   }
 
   private subscribeToMqtt() {

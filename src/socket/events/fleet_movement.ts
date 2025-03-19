@@ -9,24 +9,5 @@ export const fleetMovementEvents = (
     logger.info("Client joined " + fleetNo);
     socket.join(fleetNo);
     socket.emit("join", fleetNo);
-
-    socket.on("stream_movement", async () => {
-      logger.info(`Streaming movement for fleet ${fleetNo}`);
-      socket
-        .to(fleetNo)
-        .emit(
-          "stream_movement",
-          { name: "CBD-JUJA" },
-          { name: "Ruiru" },
-          { name: "Juja" }
-        );
-
-      socket.emit(
-        "stream_movement",
-        { name: "CBD-JUJA" },
-        { name: "Ruiru" },
-        { name: "Juja" }
-      );
-    });
   });
 };
