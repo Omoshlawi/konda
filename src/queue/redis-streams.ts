@@ -1,13 +1,11 @@
-import { Stage, Route } from "../../dist/prisma";
-
 import { sendSocketMessage } from "@/socket";
 import {
   createRedisStreamConsumer,
-  getLatestEntriesFromStream,
   MessageHandler,
   RedisStreamConsumerOptions,
 } from "@/utils/stream";
 import { MQTT_TOPICS } from ".";
+import { FleetRouteInterStageMovement } from "@/socket/events/types";
 
 const fleetStream = async () => {
   const fleetStreamOptions: RedisStreamConsumerOptions = {
@@ -16,19 +14,16 @@ const fleetStream = async () => {
   };
 
   const fleetStreamHandler: MessageHandler<
-    { fleet: string; r: string; c: string; n: string },
+    FleetRouteInterStageMovement,
     { fleetNo: string }
   > = async (streamKey, messageId, payload, metadata) => {
-    const route = { name: payload?.r };
-    const currStage = { name: payload.c };
-    const nextStage = { name: payload.n };
     sendSocketMessage(
       "stream_movement",
       "/fleet",
-      metadata?.fleetNo ?? payload?.fleet,
-      route,
-      currStage,
-      nextStage
+      metadata?.fleetNo ?? payload?.fleetNo,
+      payload.routeName,
+      payload.currentStage,
+      payload.nextStage
     );
     console.log(
       `Processing message ${messageId} from ${streamKey}:`,
@@ -53,20 +48,6 @@ const mqttStream = async () => {
     const payload: { latitude: number; longitude: number; fleet: string } =
       JSON.parse(data);
     console.log("GPS", payload);
-    console.log(
-      "Latest",
-      await getLatestEntriesFromStream<{ data: string }>(
-        "sensors_gps",
-        ({ data }) => data.data.includes(payload.fleet)
-      )
-    );
-    console.log(
-      "Latest2",
-      await getLatestEntriesFromStream<{ data: string }>(
-        "sensors_gps",
-        ({ data }) => data.data.includes(payload.fleet + "uknown")
-      )
-    );
 
     // TODO Stream changes to users subscribed to realtime cordinate changes for current fleet
     // Check if curr location is in boundary of next stage and if so update currStage to the next and next stage query from db abd store to next
