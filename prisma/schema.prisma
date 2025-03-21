@@ -142,7 +142,7 @@ model Operator {
 
 model Fleet {
   id          String       @id @default(uuid())
-  name        String
+  name        String       @unique
   vehicleType String // Bus, Matatu, Shuttle, etc.
   capacity    Int
   plateNumber String       @unique
@@ -154,8 +154,6 @@ model Fleet {
   voided      Boolean      @default(false)
   trips       Trip[]
   routes      FleetRoute[]
-
-  @@unique([name, operatorId])
 }
 
 model Route {
@@ -175,11 +173,11 @@ model Route {
 }
 
 model FleetRoute {
-  id      String @id @default(uuid())
-  routeId String
-  route   Route  @relation(fields: [routeId], references: [id])
-  fleetId String
-  fleet   Fleet  @relation(fields: [fleetId], references: [id])
+  id        String   @id @default(uuid())
+  routeId   String
+  route     Route    @relation(fields: [routeId], references: [id])
+  fleetId   String
+  fleet     Fleet    @relation(fields: [fleetId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   voided    Boolean  @default(false)

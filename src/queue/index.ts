@@ -44,7 +44,7 @@ export const subscribeToMQTTTopicsAndEvents = () => {
     }
     publishToRedisStream(
       topic.replace("/", "_"),
-      { data: contentType === "binary" ? _payload : JSON.stringify(_payload) },
+      contentType === "binary" ? { data: _payload } : _payload,
       { topic, contentType, timestamp: Date.now() }
     );
   });

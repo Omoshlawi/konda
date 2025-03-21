@@ -36,10 +36,13 @@ import { flattenObject, unflattenArray } from "../helpers";
  * }
  * ```
  */
-export const publishToRedisStream = async (
+export const publishToRedisStream = async <
+  TPayload extends Record<string, any>,
+  TMeta = Record<string, any>
+>(
   streamKey: string,
-  payload: Record<string, any>,
-  metadata: Record<string, any> = {}
+  payload: TPayload,
+  metadata?: TMeta
 ): Promise<string> => {
   try {
     // Combine the message and metadata into a single object

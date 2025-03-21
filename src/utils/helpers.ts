@@ -232,9 +232,8 @@ export const generateDefaultKey = (req: Request) => {
   const normalizedQuery = normalizeQuery(req.query);
   return `${basePath}${normalizedQuery}`;
 };
-
 type NestedObject = { [key: string]: any };
-type FlattenedArray = (string | any)[];
+type FlattenedArray = (string | string)[]; // Changed to string | string since all values will be stringified
 
 export function flattenObject(
   obj: NestedObject,
@@ -253,11 +252,13 @@ export function flattenObject(
         if (typeof item === "object" && item !== null) {
           result.push(...flattenObject(item, arrayAccessor));
         } else {
-          result.push(arrayAccessor, item);
+          // Stringify primitive values to preserve type
+          result.push(arrayAccessor, JSON.stringify(item));
         }
       });
     } else {
-      result.push(accessor, value);
+      // Stringify primitive values to preserve type
+      result.push(accessor, JSON.stringify(value));
     }
   });
 
@@ -271,7 +272,16 @@ export function unflattenArray(arr: FlattenedArray): UnflattenedObject {
 
   for (let i = 0; i < arr.length; i += 2) {
     const accessor = arr[i] as string;
-    const value = arr[i + 1];
+    const stringifiedValue = arr[i + 1] as string;
+
+    // Parse stringified value to restore its original type
+    let value;
+    try {
+      value = JSON.parse(stringifiedValue);
+    } catch (e) {
+      // If parsing fails, use the original string value
+      value = stringifiedValue;
+    }
 
     const keys = accessor.split(".");
     let current = result;

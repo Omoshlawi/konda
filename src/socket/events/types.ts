@@ -4,8 +4,9 @@ export type FleetRouteInterStageMovement = {
   routeId: string;
   currentStage: string;
   currentStageId: string;
-  nextStage: string;
-  nextStageId: string;
+  nextStage?: string;
+  nextStageId?: string;
+  pastCurrentStageButNotNextStage: boolean;
 };
 
 export type GPSSesorData = {
