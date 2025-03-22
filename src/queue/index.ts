@@ -10,16 +10,16 @@ export const MQTT_TOPICS = Object.freeze({
 
 export const subscribeToMQTTTopicsAndEvents = () => {
   // TODO: remove
-  setInterval(() => {
-    mqttClient.publish(
-      "sensors/gps",
-      JSON.stringify({
-        latitude: -1.12536,
-        longitude: 25.852,
-        fleetNo: "SM-002",
-      })
-    );
-  }, 2000);
+  // setInterval(() => {
+  //   mqttClient.publish(
+  //     "sensors/gps",
+  //     JSON.stringify({
+  //       latitude: -1.12536,
+  //       longitude: 25.852,
+  //       fleetNo: "SM-002",
+  //     })
+  //   );
+  // }, 2000);
 
   // Subscribe to all topics
   Object.values(MQTT_TOPICS).forEach((topic) => {

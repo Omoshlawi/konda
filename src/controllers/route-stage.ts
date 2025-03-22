@@ -3,6 +3,7 @@ import { RouteStagesModel } from "../models";
 import { RouteStageschema } from "@/schema";
 import { getMultipleOperationCustomRepresentationQeury } from "@/utils/db";
 import { APIException } from "@/utils/exceptions";
+import db from "@/services/db";
 
 export const getRouteStages = async (
   req: Request,
@@ -169,14 +170,18 @@ export const shiftRouteStage = async (
     const currRouteStagesCount = await RouteStagesModel.count({
       where: { routeId: req.params.routeId! },
     });
-    if (action === "up" && currStageOrder.order === 1) {
+
+    if (action === "up" && currStageOrder.order === 0) {
       throw new APIException(400, {
-        _errors: ["Cant shift upward the first stage"],
+        _errors: ["Cant shift the first stage upward"],
       });
     }
-    if (action === "down" && currStageOrder.order === currRouteStagesCount) {
+    if (
+      action === "down" &&
+      currStageOrder.order === currRouteStagesCount - 1
+    ) {
       throw new APIException(400, {
-        _errors: ["Cant shift downward the last stage"],
+        _errors: ["Cant shift the last stage downward"],
       });
     }
     const adjuscentStage = await RouteStagesModel.findFirst({
@@ -185,36 +190,42 @@ export const shiftRouteStage = async (
         order:
           action === "up" ? currStageOrder.order - 1 : currStageOrder.order + 1,
       },
-      select: { id: true },
+      select: { id: true, order: true },
     });
     if (!adjuscentStage) {
       throw new APIException(400, {
         _errors: ["No adjuscent stage found"],
       });
     }
-    // swap the order of the two stages
-    const item = await RouteStagesModel.update({
-      where: {
-        id: req.params.routeStageId,
-        routeId: req.params.routeId!,
-      },
-      data: {
-        order:
-          action === "up" ? currStageOrder.order - 1 : currStageOrder.order + 1,
-      },
-      ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
-    });
-    await RouteStagesModel.update({
-      where: {
-        id: adjuscentStage.id,
-        routeId: req.params.routeId!,
-      },
-      data: {
-        order:
-          action === "up" ? currStageOrder.order : currStageOrder.order - 1,
-      },
-    });
-    return res.json(item);
+
+    // Use a transaction to ensure atomic swapping of orders
+    const result = await db.$transaction([
+      // Update current stage with adjacent stage's order
+      RouteStagesModel.update({
+        where: {
+          id: req.params.routeStageId,
+          routeId: req.params.routeId!,
+        },
+        data: {
+          order: adjuscentStage.order,
+        },
+        ...getMultipleOperationCustomRepresentationQeury(
+          req.query?.v as string
+        ),
+      }),
+      // Update adjacent stage with current stage's order
+      RouteStagesModel.update({
+        where: {
+          id: adjuscentStage.id,
+          routeId: req.params.routeId!,
+        },
+        data: {
+          order: currStageOrder.order,
+        },
+      }),
+    ]);
+
+    return res.json(result[0]); // Return the updated current stage
   } catch (error) {
     next(error);
   }
