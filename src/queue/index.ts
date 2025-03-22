@@ -1,7 +1,5 @@
 import logger from "@/services/logger";
 import mqttClient from "@/services/mqtt";
-import EventEmitter from "events";
-import { onCommand, onSesorGps, onSesorTemprature } from "./events";
 import { publishToRedisStream } from "@/utils/stream";
 
 export const MQTT_TOPICS = Object.freeze({
@@ -11,6 +9,18 @@ export const MQTT_TOPICS = Object.freeze({
 });
 
 export const subscribeToMQTTTopicsAndEvents = () => {
+  // TODO: remove
+  setInterval(() => {
+    mqttClient.publish(
+      "sensors/gps",
+      JSON.stringify({
+        latitude: -1.12536,
+        longitude: 25.852,
+        fleetNo: "SM-002",
+      })
+    );
+  }, 2000);
+
   // Subscribe to all topics
   Object.values(MQTT_TOPICS).forEach((topic) => {
     mqttClient.subscribe(topic, { qos: 1 }, (err) => {
@@ -42,6 +52,7 @@ export const subscribeToMQTTTopicsAndEvents = () => {
       _payload = payload.toString("base64"); // Encode binary as Base64
       contentType = "binary";
     }
+
     publishToRedisStream(
       topic.replace("/", "_"),
       contentType === "binary" ? { data: _payload } : _payload,

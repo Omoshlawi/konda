@@ -18,3 +18,32 @@ export const validateUUIDPathParam =
       return next(error);
     }
   };
+
+export const validateRegexPathParamas =
+  (paramName: string, regex: RegExp) =>
+  async (req: Request, response: Response, next: NextFunction) => {
+    try {
+      req;
+      if (!regex.test(req.params[paramName] as string))
+        throw { status: 404, errors: { detail: "Not found" } };
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+export const validateCustomPathParam = (
+  paramName: string,
+  validator: (value: string) => boolean
+) => {
+  return async (req: Request, response: Response, next: NextFunction) => {
+    try {
+      req;
+      if (!validator(req.params[paramName] as string))
+        throw { status: 404, errors: { detail: "Not found" } };
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
+};

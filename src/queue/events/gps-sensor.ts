@@ -5,7 +5,11 @@ import {
   GPSSesorData,
 } from "@/socket/events/types";
 import { isWithinRadius } from "@/utils/geo";
-import { getLatestEntriesFromStream, MessageHandler, publishToRedisStream } from "@/utils/stream";
+import {
+  getLatestEntriesFromStream,
+  MessageHandler,
+  publishToRedisStream,
+} from "@/utils/stream";
 
 export const gpsStreamHandler: MessageHandler<
   GPSSesorData,
@@ -25,7 +29,7 @@ export const gpsStreamHandler: MessageHandler<
 
   // If no previous entry findout current stage and next stage
   if (lastEntry.length === 0) {
-    logger.info(`No movement history for fleet: ${payload.fleetNo}`);
+    logger.warn(`No movement history for fleet: ${payload.fleetNo}`);
     const currentFeetRoutes = await FleetRoutesModel.findMany({
       where: {
         voided: false,
@@ -37,7 +41,7 @@ export const gpsStreamHandler: MessageHandler<
     });
     // If no match do nothing for now
     if (currentFeetRoutes.length === 0) {
-      logger.error(`No routes found for fleet: ${payload.fleetNo}`);
+      logger.warn(`No routes found for fleet: ${payload.fleetNo}`);
       // TODO handle unmatched route
       return;
     }
@@ -59,7 +63,7 @@ export const gpsStreamHandler: MessageHandler<
     });
     // If no match do nothing for now
     if (!currentFleetRoute) {
-      logger.error(
+      logger.warn(
         `No route found for fleet: ${payload.fleetNo} within the current location`
       );
       // TODO handle unmatched route
@@ -91,11 +95,14 @@ export const gpsStreamHandler: MessageHandler<
     lastEntry[0]?.data?.pastCurrentStageButNotNextStage;
   const route = await RoutesModel.findUniqueOrThrow({
     where: { id: routeId },
-    include: { stages: { include: { stage: true } } },
+    include: {
+      stages: { include: { stage: true }, orderBy: { order: "asc" } },
+    },
   });
   const currentStage = route.stages.find((s) => s.stageId === currentStageId);
   const nextStage = route.stages.find((s) => s.stageId === nextStageId);
   const _nextStage = route.stages.find((s) => s.order === nextStage!.order + 1);
+  console.log("Lats entry --->", _nextStage, nextStage, route, routeId);
 
   // 2 Check if current location is within the radius of the current stage
   const isWithinCurrentStage = isWithinRadius(

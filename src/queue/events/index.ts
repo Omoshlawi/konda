@@ -20,4 +20,3 @@ export const onSesorGps = (
   packet: Packet
 ) => {};
 
-export * from "./gps-sensor";

@@ -18,5 +18,5 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
       `Processing message ${messageId} from ${streamKey}:`,
       JSON.stringify(payload, null, 2)
     );
-    console.log("Metadat: ", metadata);
+    console.log("Metadata: ", metadata);
   };

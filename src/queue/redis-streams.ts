@@ -1,12 +1,9 @@
-import { sendSocketMessage } from "@/socket";
-import { FleetRouteInterStageMovement } from "@/socket/events/types";
 import {
   createRedisStreamConsumer,
-  MessageHandler,
   RedisStreamConsumerOptions,
 } from "@/utils/stream";
 import { MQTT_TOPICS } from ".";
-import { gpsStreamHandler } from "./events";
+import { gpsStreamHandler } from "./events/gps-sensor";
 import { fleetInterStageMovementStreamHandler } from "./events/fleet-interstage-movement";
 
 const fleetStream = async () => {

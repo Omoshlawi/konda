@@ -6,9 +6,10 @@ import {
   getRouteStages,
   patchRouteStage,
   purgeRouteStage,
+  shiftRouteStage,
   updateRouteStage,
 } from "../controllers/route-stage";
-import { validateUUIDPathParam } from "@/middlewares";
+import { validateCustomPathParam, validateUUIDPathParam } from "@/middlewares";
 
 const router = Router({ mergeParams: true });
 
@@ -38,6 +39,16 @@ router.purge(
   "/:routeStageId",
   [validateUUIDPathParam("routeStageId")],
   purgeRouteStage
+);
+router.put(
+  "/:routeStageId/shift/:shiftDirection",
+  [
+    validateUUIDPathParam("routeStageId"),
+    validateCustomPathParam("shiftDirection", (value) =>
+      ["up", "down"].includes(value)
+    ),
+  ],
+  shiftRouteStage
 );
 
 export default router;

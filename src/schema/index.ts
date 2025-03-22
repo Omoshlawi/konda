@@ -71,7 +71,6 @@ export const StagesShema = z.object({
 });
 
 export const RouteStageschema = z.object({
-  order: z.number().int().positive("Must be a positive integer"),
   stageId: z.string().min(1, "Required").uuid(),
 });
 
