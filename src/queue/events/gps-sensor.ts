@@ -89,20 +89,23 @@ async function handleNewFleet(payload: GPSSesorData): Promise<void> {
     }
 
     // Find a route with a starting stage that matches current location
-    const matchedRoute = findMatchingRoute(payload, fleetRoutes);
-
-    if (!matchedRoute) {
+    const matchedRouteInfo = findMatchingRoute(payload, fleetRoutes);
+    if (!matchedRouteInfo) {
       logger.warn(
         `Fleet ${payload.fleetNo} not within any starting stage radius`
       );
       return;
     }
+    const { fleetRoute, isReverse } = matchedRouteInfo;
+    const stages = isReverse
+      ? [...fleetRoute.route.stages].reverse()
+      : fleetRoute.route.stages;
 
-    const firstStage = matchedRoute.route.stages[0];
-    const secondStage = matchedRoute.route.stages[1];
+    const firstStage = stages[0];
+    const secondStage = stages[1];
 
     if (!firstStage || !firstStage.stage) {
-      logger.error(`Invalid first stage for route: ${matchedRoute.route.id}`);
+      logger.error(`Invalid first stage for route: ${fleetRoute.route.id}`);
       return;
     }
 
@@ -111,13 +114,14 @@ async function handleNewFleet(payload: GPSSesorData): Promise<void> {
       "fleet_movement_stream",
       {
         fleetNo: payload.fleetNo,
-        routeName: matchedRoute.route.name,
-        routeId: matchedRoute.route.id,
+        routeName: fleetRoute.route.name,
+        routeId: fleetRoute.route.id,
         currentStage: firstStage.stage.name,
         currentStageId: firstStage.stageId,
         nextStage: secondStage?.stage?.name,
         nextStageId: secondStage?.stageId,
         pastCurrentStageButNotNextStage: false,
+        isReverse,
       }
     );
 
@@ -141,9 +145,13 @@ function findMatchingRoute(
   })[]
 ) {
   for (const fleetRoute of fleetRoutes) {
-    const firstStage = fleetRoute.route.stages.find((s) => s.order === 0);
+    const stages = fleetRoute.route.stages;
 
-    if (!firstStage || !firstStage.stage) continue;
+    // Check normal direction (JUJA -> CBD)
+    const firstStage = stages.find((s) => s.order === 0);
+    const lastStage = stages.find((s) => s.order === stages.length - 1);
+
+    if (!firstStage || !lastStage) continue;
 
     const isAtFirstStage = isWithinRadius(
       [payload.latitude, payload.longitude],
@@ -154,8 +162,19 @@ function findMatchingRoute(
       firstStage.stage.radius
     );
 
+    const isAtLastStage = isWithinRadius(
+      [payload.latitude, payload.longitude],
+      [
+        lastStage.stage.latitude.toNumber(),
+        lastStage.stage.longitude.toNumber(),
+      ],
+      lastStage.stage.radius
+    );
+
     if (isAtFirstStage) {
-      return fleetRoute;
+      return { fleetRoute, isReverse: false }; // Normal route
+    } else if (isAtLastStage) {
+      return { fleetRoute, isReverse: true }; // Reverse route (CBD -> JUJA)
     }
   }
 
@@ -173,9 +192,8 @@ async function processExistingFleet(
     logger.warn(`Invalid last movement data for fleet: ${payload.fleetNo}`);
     return;
   }
-
   try {
-    const { currentStageId, nextStageId, routeId } = lastMovement;
+    const { currentStageId, nextStageId, routeId, isReverse } = lastMovement;
 
     if (!routeId || !currentStageId) {
       logger.error(
@@ -214,7 +232,10 @@ async function processExistingFleet(
 
     // Find stage after next (if any)
     const afterNextStage = nextStage
-      ? route.stages.find((s) => s.order === nextStage.order + 1)
+      ? route.stages.find(
+          (s) =>
+            s.order === (isReverse ? nextStage.order - 1 : nextStage.order + 1)
+        )
       : null;
 
     // Check if fleet is within the current stage
@@ -249,7 +270,8 @@ async function processExistingFleet(
       afterNextStage ?? null,
       isAtCurrentStage,
       isAtNextStage,
-      lastMovement.pastCurrentStageButNotNextStage
+      lastMovement.pastCurrentStageButNotNextStage,
+      isReverse
     );
   } catch (error: any) {
     logger.error(
@@ -269,7 +291,8 @@ async function updateFleetMovementState(
   afterNextStage: (RouteStage & { stage: Stage }) | null,
   isAtCurrentStage: boolean,
   isAtNextStage: boolean,
-  wasPastCurrentStage: boolean
+  wasPastCurrentStage: boolean,
+  isReverse: boolean
 ): Promise<void> {
   // Still at current stage - nothing to update
   if (isAtCurrentStage) {
@@ -290,6 +313,7 @@ async function updateFleetMovementState(
           nextStage: nextStage?.stage?.name ?? undefined,
           nextStageId: nextStage?.stageId ?? undefined,
           pastCurrentStageButNotNextStage: false,
+          isReverse,
         }
       );
       logger.info(
@@ -316,6 +340,7 @@ async function updateFleetMovementState(
         nextStage: afterNextStage?.stage?.name ?? undefined,
         nextStageId: afterNextStage?.stageId ?? undefined,
         pastCurrentStageButNotNextStage: false,
+        isReverse,
       }
     );
     return;
@@ -340,6 +365,7 @@ async function updateFleetMovementState(
         nextStage: nextStage?.stage?.name ?? undefined,
         nextStageId: nextStage?.stageId ?? undefined,
         pastCurrentStageButNotNextStage: true,
+        isReverse,
       }
     );
   }

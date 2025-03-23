@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  activateFleetRoute,
   addFleetRoute,
   deleteFleetRoute,
   getFleetRoute,
@@ -39,6 +40,12 @@ router.purge(
   "/:fleetRouteId",
   [validateUUIDPathParam("fleetRouteId"), authenticate],
   purgeFleetRoute
+);
+
+router.put(
+  "/:fleetRouteId/activate",
+  [validateUUIDPathParam("fleetRouteId"), authenticate],
+  activateFleetRoute
 );
 
 export default router;

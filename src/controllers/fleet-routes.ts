@@ -3,6 +3,7 @@ import { FleetRoutesModel } from "../models";
 import { FleetRouteSchema } from "@/schema";
 import { getMultipleOperationCustomRepresentationQeury } from "@/utils/db";
 import { APIException } from "@/utils/exceptions";
+import db from "@/services/db";
 
 export const getFleetRoutes = async (
   req: Request,
@@ -147,6 +148,44 @@ export const purgeFleetRoute = async (
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const activateFleetRoute = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const updatedFleetRoute = await db.$transaction(async (prisma) => {
+      // Deactivate all other active routes for the fleet
+      await prisma.fleetRoute.updateMany({
+        where: {
+          fleetId: req.params.fleetId,
+          isActive: true,
+          voided: false,
+          id: { not: req.params.fleetRouteId },
+        },
+        data: { isActive: false },
+      });
+
+      // Activate the selected route
+      return await prisma.fleetRoute.update({
+        where: {
+          id: req.params.fleetRouteId,
+          fleetId: req.params.fleetId,
+          voided: false,
+        },
+        data: { isActive: true },
+        ...getMultipleOperationCustomRepresentationQeury(
+          req.query?.v as string
+        ),
+      });
+    });
+
+    return res.json(updatedFleetRoute);
   } catch (error) {
     next(error);
   }

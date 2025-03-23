@@ -1,7 +1,7 @@
 import logger from "@/services/logger";
 import { getLatestEntriesFromStream } from "@/utils/stream";
 import { DefaultEventsMap, Socket } from "socket.io";
-import { FleetRouteInterStageMovement } from "./types";
+import { FleetRouteInterStageMovement } from "@/types";
 
 export const fleetMovementEvents = (
   socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>

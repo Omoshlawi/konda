@@ -125,4 +125,5 @@ export const FleetRouteInterStageMovementSchema = z.object({
   nextStage: z.string().optional(),
   nextStageId: z.string().uuid().optional(),
   pastCurrentStageButNotNextStage: z.boolean(),
+  isReverse: z.boolean(),
 });

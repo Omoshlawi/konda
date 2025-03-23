@@ -178,6 +178,7 @@ model FleetRoute {
   route     Route    @relation(fields: [routeId], references: [id])
   fleetId   String
   fleet     Fleet    @relation(fields: [fleetId], references: [id])
+  isActive  Boolean  @default(false) // Only one active per fleet
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   voided    Boolean  @default(false)
