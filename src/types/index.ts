@@ -1,4 +1,9 @@
+import { z } from "zod";
 import { type User } from "../../dist/prisma";
+import {
+  FleetRouteInterStageMovementSchema,
+  GPSSensorDataSchema,
+} from "@/schema";
 
 export interface TokenPayload {
   userId: string; //user id
@@ -15,3 +20,9 @@ declare global {
     }
   }
 }
+
+export type FleetRouteInterStageMovement = z.infer<
+  typeof FleetRouteInterStageMovementSchema
+>;
+
+export type GPSSesorData = z.infer<typeof GPSSensorDataSchema>;

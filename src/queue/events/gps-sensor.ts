@@ -1,191 +1,346 @@
 import { FleetRoutesModel, RoutesModel } from "@/models";
+import { GPSSensorDataSchema } from "@/schema";
 import logger from "@/services/logger";
-import {
-  FleetRouteInterStageMovement,
-  GPSSesorData,
-} from "@/socket/events/types";
+import { FleetRouteInterStageMovement, GPSSesorData } from "@/types";
+
 import { isWithinRadius } from "@/utils/geo";
 import {
   getLatestEntriesFromStream,
   MessageHandler,
   publishToRedisStream,
 } from "@/utils/stream";
+import { FleetRoute, Route, RouteStage, Stage } from "dist/prisma";
 
+/**
+ * Handles GPS data stream events for fleet tracking and route stage progression
+ */
 export const gpsStreamHandler: MessageHandler<
   GPSSesorData,
   { topic: string; timeStamp: string }
 > = async (streamKey, messageId, payload, metadata) => {
-  // TODO Implement streaming of coordinates to users subscribed to realtime cordinate changes for current fleet
-  // TODO Implement validation, ie shape of GPS Data, if fleet exists et
-  // TODO Optionally persist the GPS data in a time series db
-  // TODO Implement a mechanism to handle fleet that are not moving
+  try {
+    const validation = await GPSSensorDataSchema.safeParseAsync(payload);
 
-  // 1 Get last known entry values for the fleet
-  const lastEntry =
-    await getLatestEntriesFromStream<FleetRouteInterStageMovement>(
-      "fleet_movement_stream",
-      ({ data: { fleetNo: fln } }) => payload.fleetNo === fln
+    if (!validation.success) {
+      logger.warn(
+        `Invalid GPS data received: ${JSON.stringify(
+          payload
+        )}.Error: ${validation.error.format()}`
+      );
+      return;
+    }
+
+    logger.debug(`Processing GPS data for fleet: ${payload.fleetNo}`, {
+      lat: payload.latitude,
+      lng: payload.longitude,
+    });
+
+    // Get the last known movement state for this fleet
+    const lastEntries =
+      await getLatestEntriesFromStream<FleetRouteInterStageMovement>(
+        "fleet_movement_stream",
+        ({ data }) => data?.fleetNo === payload.fleetNo
+      );
+
+    // First time seeing this fleet or no movement history
+    if (!lastEntries.length) {
+      await handleNewFleet(payload);
+      return;
+    }
+
+    // Process existing fleet with movement history
+    await processExistingFleet(payload, lastEntries[0]?.data);
+  } catch (error: any) {
+    logger.error(
+      `Error processing GPS data for fleet ${payload.fleetNo}: ${error?.message}`
     );
+    //TODO Consider publishing an error event to a monitoring stream
+  }
+};
 
-  // If no previous entry findout current stage and next stage
-  if (lastEntry.length === 0) {
-    logger.warn(`No movement history for fleet: ${payload.fleetNo}`);
-    const currentFeetRoutes = await FleetRoutesModel.findMany({
+/**
+ * Handles a fleet with no previous movement history
+ */
+async function handleNewFleet(payload: GPSSesorData): Promise<void> {
+  logger.info(`Initializing movement tracking for fleet: ${payload.fleetNo}`);
+
+  try {
+    // Find routes assigned to this fleet
+    const fleetRoutes = await FleetRoutesModel.findMany({
       where: {
         voided: false,
         fleet: { name: payload.fleetNo },
       },
       include: {
-        route: { include: { stages: { include: { stage: true } } } },
+        route: {
+          include: {
+            stages: {
+              include: { stage: true },
+              orderBy: { order: "asc" },
+            },
+          },
+        },
       },
     });
-    // If no match do nothing for now
-    if (currentFeetRoutes.length === 0) {
+
+    if (!fleetRoutes.length) {
       logger.warn(`No routes found for fleet: ${payload.fleetNo}`);
-      // TODO handle unmatched route
       return;
     }
 
-    // Check all routes whose stages are within the radius of the current location
-    // TODO Confirm assumption that one fleet can have more that one route but with start stage similar
-    const currentFleetRoute = currentFeetRoutes.find((r) => {
-      const stage = r.route.stages.find((s) => {
-        return (
-          s.order === 1 && // Ensures its the first stage
-          isWithinRadius(
-            [payload.latitude, payload.longitude],
-            [s.stage.latitude.toNumber(), s.stage.longitude.toNumber()],
-            s.stage.radius
-          )
-        );
-      });
-      return stage;
-    });
-    // If no match do nothing for now
-    if (!currentFleetRoute) {
+    // Find a route with a starting stage that matches current location
+    const matchedRoute = findMatchingRoute(payload, fleetRoutes);
+
+    if (!matchedRoute) {
       logger.warn(
-        `No route found for fleet: ${payload.fleetNo} within the current location`
+        `Fleet ${payload.fleetNo} not within any starting stage radius`
       );
-      // TODO handle unmatched route
       return;
     }
-    const currentStage = currentFleetRoute.route.stages.find(
-      (s) => s.order === 1
-    );
-    const nextStage = currentFleetRoute.route.stages.find((s) => s.order === 2);
-    await publishToRedisStream<FleetRouteInterStageMovement>(
-      "fleet_movement_stream",
-      {
-        fleetNo: payload.fleetNo,
-        routeName: currentFleetRoute.route.name,
-        routeId: currentFleetRoute.route.id,
-        currentStage: currentStage!.stage!.name,
-        currentStageId: currentStage!.stageId,
-        nextStage: nextStage!.stage!.name,
-        nextStageId: nextStage!.stageId,
-        pastCurrentStageButNotNextStage: false,
-      }
-    );
-  }
-  // Query db for current stage and next stage
-  const currentStageId = lastEntry[0]?.data?.currentStageId;
-  const nextStageId = lastEntry[0]?.data?.nextStageId;
-  const routeId = lastEntry[0]?.data?.routeId;
-  const pastCurrentStageButNotNextStage =
-    lastEntry[0]?.data?.pastCurrentStageButNotNextStage;
-  const route = await RoutesModel.findUniqueOrThrow({
-    where: { id: routeId },
-    include: {
-      stages: { include: { stage: true }, orderBy: { order: "asc" } },
-    },
-  });
-  const currentStage = route.stages.find((s) => s.stageId === currentStageId);
-  const nextStage = route.stages.find((s) => s.stageId === nextStageId);
-  const _nextStage = route.stages.find((s) => s.order === nextStage!.order + 1);
-  console.log("Lats entry --->", _nextStage, nextStage, route, routeId);
 
-  // 2 Check if current location is within the radius of the current stage
-  const isWithinCurrentStage = isWithinRadius(
-    [payload.latitude, payload.longitude],
-    [
-      currentStage!.stage!.latitude.toNumber(),
-      currentStage!.stage!.longitude.toNumber(),
-    ],
-    currentStage!.stage!.radius
-  );
-  // 3 Check if current location is within the radius of the next stage
-  const isWithinNextStage = isWithinRadius(
-    [payload.latitude, payload.longitude],
-    [
-      nextStage!.stage!.latitude.toNumber(),
-      nextStage!.stage!.longitude.toNumber(),
-    ],
-    nextStage!.stage!.radius
-  );
-  // 4 If within current stage do nothing // TODO (maybe just persist the movement in time series db)
-  if (isWithinCurrentStage) {
-    logger.info(
-      `Fleet ${payload.fleetNo} is within current stage ${currentStage?.stage?.name}`
-    );
-    return;
-  }
-  // 5 if within next stage then update current to next and next to _next
-  if (isWithinNextStage && _nextStage) {
-    logger.info(
-      `Fleet ${payload.fleetNo} is within next stage ${nextStage?.stage?.name}`
-    );
+    const firstStage = matchedRoute.route.stages[0];
+    const secondStage = matchedRoute.route.stages[1];
+
+    if (!firstStage || !firstStage.stage) {
+      logger.error(`Invalid first stage for route: ${matchedRoute.route.id}`);
+      return;
+    }
+
+    // Initialize the fleet movement state
     await publishToRedisStream<FleetRouteInterStageMovement>(
       "fleet_movement_stream",
       {
         fleetNo: payload.fleetNo,
-        routeName: route.name,
-        routeId: route.id,
-        currentStage: nextStage!.stage!.name,
-        currentStageId: nextStageId!,
-        nextStage: _nextStage.stage.name,
-        nextStageId: _nextStage.id,
+        routeName: matchedRoute.route.name,
+        routeId: matchedRoute.route.id,
+        currentStage: firstStage.stage.name,
+        currentStageId: firstStage.stageId,
+        nextStage: secondStage?.stage?.name,
+        nextStageId: secondStage?.stageId,
         pastCurrentStageButNotNextStage: false,
       }
     );
-    return;
-  }
-  // 6 if within next stage but no _next (i,e next stage is the last stage)
-  if (isWithinNextStage && !_nextStage) {
+
     logger.info(
-      `Fleet ${payload.fleetNo} is within next stage ${nextStage?.stage?.name}`
+      `Fleet ${payload.fleetNo} initialized at stage: ${firstStage.stage.name}`
     );
-    // Update current stage to next stage
-    await publishToRedisStream<FleetRouteInterStageMovement>(
-      "fleet_movement_stream",
-      {
-        fleetNo: payload.fleetNo,
-        routeName: route.name,
-        routeId: route.id,
-        currentStage: nextStage!.stage!.name,
-        currentStageId: nextStageId!,
-        nextStage: "---",
-        nextStageId: "---",
-        pastCurrentStageButNotNextStage: false,
-      }
+  } catch (error: any) {
+    logger.error(
+      `Failed to initialize fleet ${payload.fleetNo}: ${error?.message}`
     );
+  }
+}
+
+/**
+ * Find a route whose first stage matches the current fleet location
+ */
+function findMatchingRoute(
+  payload: GPSSesorData,
+  fleetRoutes: (FleetRoute & {
+    route: Route & { stages: (RouteStage & { stage: Stage })[] };
+  })[]
+) {
+  for (const fleetRoute of fleetRoutes) {
+    const firstStage = fleetRoute.route.stages.find((s) => s.order === 0);
+
+    if (!firstStage || !firstStage.stage) continue;
+
+    const isAtFirstStage = isWithinRadius(
+      [payload.latitude, payload.longitude],
+      [
+        firstStage.stage.latitude.toNumber(),
+        firstStage.stage.longitude.toNumber(),
+      ],
+      firstStage.stage.radius
+    );
+
+    if (isAtFirstStage) {
+      return fleetRoute;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Process GPS data for a fleet with existing movement history
+ */
+async function processExistingFleet(
+  payload: GPSSesorData,
+  lastMovement?: FleetRouteInterStageMovement
+): Promise<void> {
+  if (!lastMovement) {
+    logger.warn(`Invalid last movement data for fleet: ${payload.fleetNo}`);
     return;
   }
 
-  // 7 if not within current stage but not within next stage then set pastCurrentStageButNotNextStage to true
-  if (!isWithinNextStage && !isWithinCurrentStage) {
+  try {
+    const { currentStageId, nextStageId, routeId } = lastMovement;
+
+    if (!routeId || !currentStageId) {
+      logger.error(
+        `Missing route or stage information for fleet: ${payload.fleetNo}`
+      );
+      return;
+    }
+
+    // Get complete route information
+    const route = await RoutesModel.findUnique({
+      where: { id: routeId },
+      include: {
+        stages: {
+          include: { stage: true },
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    if (!route) {
+      logger.error(`Route not found: ${routeId}`);
+      return;
+    }
+
+    const currentStage = route.stages.find((s) => s.stageId === currentStageId);
+
+    if (!currentStage || !currentStage.stage) {
+      logger.error(`Current stage not found: ${currentStageId}`);
+      return;
+    }
+
+    // Find next stage (if any)
+    const nextStage = nextStageId
+      ? route.stages.find((s) => s.stageId === nextStageId)
+      : null;
+
+    // Find stage after next (if any)
+    const afterNextStage = nextStage
+      ? route.stages.find((s) => s.order === nextStage.order + 1)
+      : null;
+
+    // Check if fleet is within the current stage
+    const isAtCurrentStage = isWithinRadius(
+      [payload.latitude, payload.longitude],
+      [
+        currentStage.stage.latitude.toNumber(),
+        currentStage.stage.longitude.toNumber(),
+      ],
+      currentStage.stage.radius
+    );
+
+    // Check if fleet is within the next stage (if there is one)
+    const isAtNextStage =
+      nextStage && nextStage.stage
+        ? isWithinRadius(
+            [payload.latitude, payload.longitude],
+            [
+              nextStage.stage.latitude.toNumber(),
+              nextStage.stage.longitude.toNumber(),
+            ],
+            nextStage.stage.radius
+          )
+        : false;
+
+    // Update movement state based on current location
+    await updateFleetMovementState(
+      payload,
+      route,
+      currentStage,
+      nextStage ?? null,
+      afterNextStage ?? null,
+      isAtCurrentStage,
+      isAtNextStage,
+      lastMovement.pastCurrentStageButNotNextStage
+    );
+  } catch (error: any) {
+    logger.error(
+      `Error processing existing fleet ${payload.fleetNo}:${error?.message}`
+    );
+  }
+}
+
+/**
+ * Update the fleet movement state based on current position and stage information
+ */
+async function updateFleetMovementState(
+  payload: GPSSesorData,
+  route: any,
+  currentStage: RouteStage & { stage: Stage },
+  nextStage: (RouteStage & { stage: Stage }) | null,
+  afterNextStage: (RouteStage & { stage: Stage }) | null,
+  isAtCurrentStage: boolean,
+  isAtNextStage: boolean,
+  wasPastCurrentStage: boolean
+): Promise<void> {
+  // Still at current stage - nothing to update
+  if (isAtCurrentStage) {
+    logger.debug(
+      `Fleet ${payload.fleetNo} is still at stage ${currentStage.stage.name}`
+    );
+
+    // If we previously thought the fleet had left this stage, update the state
+    if (wasPastCurrentStage) {
+      await publishToRedisStream<FleetRouteInterStageMovement>(
+        "fleet_movement_stream",
+        {
+          fleetNo: payload.fleetNo,
+          routeName: route.name,
+          routeId: route.id,
+          currentStage: currentStage.stage.name,
+          currentStageId: currentStage.stageId,
+          nextStage: nextStage?.stage?.name ?? undefined,
+          nextStageId: nextStage?.stageId ?? undefined,
+          pastCurrentStageButNotNextStage: false,
+        }
+      );
+      logger.info(
+        `Fleet ${payload.fleetNo} has returned to stage ${currentStage.stage.name}`
+      );
+    }
+    return;
+  }
+
+  // At next stage - advance to next stage
+  if (isAtNextStage) {
+    logger.info(
+      `Fleet ${payload.fleetNo} has reached stage ${nextStage!.stage.name}`
+    );
+
     await publishToRedisStream<FleetRouteInterStageMovement>(
       "fleet_movement_stream",
       {
         fleetNo: payload.fleetNo,
         routeName: route.name,
         routeId: route.id,
-        currentStage: currentStage!.stage!.name,
-        currentStageId: currentStageId!,
-        nextStage: nextStage!.stage!.name,
-        nextStageId: nextStageId!,
+        currentStage: nextStage!.stage.name,
+        currentStageId: nextStage!.stageId,
+        nextStage: afterNextStage?.stage?.name ?? undefined,
+        nextStageId: afterNextStage?.stageId ?? undefined,
+        pastCurrentStageButNotNextStage: false,
+      }
+    );
+    return;
+  }
+
+  // Between stages - mark as past current but not yet at next
+  if (!isAtCurrentStage && !isAtNextStage && !wasPastCurrentStage) {
+    logger.info(
+      `Fleet ${payload.fleetNo} has left stage ${
+        currentStage.stage.name
+      } but not yet at ${nextStage?.stage?.name || "final destination"}`
+    );
+
+    await publishToRedisStream<FleetRouteInterStageMovement>(
+      "fleet_movement_stream",
+      {
+        fleetNo: payload.fleetNo,
+        routeName: route.name,
+        routeId: route.id,
+        currentStage: currentStage.stage.name,
+        currentStageId: currentStage.stageId,
+        nextStage: nextStage?.stage?.name ?? undefined,
+        nextStageId: nextStage?.stageId ?? undefined,
         pastCurrentStageButNotNextStage: true,
       }
     );
-    return;
   }
-};
+}

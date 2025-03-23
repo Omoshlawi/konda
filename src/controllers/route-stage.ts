@@ -33,6 +33,7 @@ export const getRouteStage = async (
         id: req.params.routeStageId,
         routeId: req.params.routeId!,
       },
+      
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);

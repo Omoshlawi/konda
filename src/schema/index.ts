@@ -109,3 +109,21 @@ export const WardFilterSchema = z.object({
   subCounty: z.string().optional(),
   search: z.string().optional(),
 });
+
+export const GPSSensorDataSchema = z.object({
+  fleetNo: z.string().nonempty(),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+});
+
+
+export const FleetRouteInterStageMovementSchema = z.object({
+  fleetNo: z.string().nonempty(),
+  routeName: z.string().nonempty(),
+  routeId: z.string().uuid(),
+  currentStage: z.string().nonempty(),
+  currentStageId: z.string().uuid(),
+  nextStage: z.string().optional(),
+  nextStageId: z.string().uuid().optional(),
+  pastCurrentStageButNotNextStage: z.boolean(),
+});

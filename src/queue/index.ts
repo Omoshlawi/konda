@@ -1,3 +1,4 @@
+import { RoutesModel } from "@/models";
 import logger from "@/services/logger";
 import mqttClient from "@/services/mqtt";
 import { publishToRedisStream } from "@/utils/stream";
@@ -9,18 +10,6 @@ export const MQTT_TOPICS = Object.freeze({
 });
 
 export const subscribeToMQTTTopicsAndEvents = () => {
-  // TODO: remove
-  // setInterval(() => {
-  //   mqttClient.publish(
-  //     "sensors/gps",
-  //     JSON.stringify({
-  //       latitude: -1.12536,
-  //       longitude: 25.852,
-  //       fleetNo: "SM-002",
-  //     })
-  //   );
-  // }, 2000);
-
   // Subscribe to all topics
   Object.values(MQTT_TOPICS).forEach((topic) => {
     mqttClient.subscribe(topic, { qos: 1 }, (err) => {
