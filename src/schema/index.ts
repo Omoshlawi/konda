@@ -60,8 +60,8 @@ export const RouteSchema = z.object({
 
 export const StagesShema = z.object({
   name: z.string().min(1, "Required"),
-  latitude: z.number({ coerce: true }),
-  longitude: z.number({ coerce: true }),
+  latitude: z.number({ coerce: true }).min(-90).max(90),
+  longitude: z.number({ coerce: true }).min(-180).max(180),
   radius: z
     .number({ coerce: true })
     .int()
@@ -115,7 +115,6 @@ export const GPSSensorDataSchema = z.object({
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
 });
-
 
 export const FleetRouteInterStageMovementSchema = z.object({
   fleetNo: z.string().nonempty(),

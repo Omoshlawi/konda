@@ -25,7 +25,7 @@ export const gpsStreamHandler: MessageHandler<
       logger.warn(
         `Invalid GPS data received: ${JSON.stringify(
           payload
-        )}.Error: ${validation.error.format()}`
+        )}.Error: ${JSON.stringify(validation.error.format())}`
       );
       return;
     }
