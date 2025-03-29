@@ -21,6 +21,8 @@ declare global {
   }
 }
 
+export type TraversalDirection = "forward" | "reverse" | "unknown";
+
 export type FleetRouteInterStageMovement = z.infer<
   typeof FleetRouteInterStageMovementSchema
 >;
