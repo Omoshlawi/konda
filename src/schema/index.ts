@@ -96,7 +96,7 @@ export const StagesFilterShema = z.object({
   countyCode: z.string().optional(),
   subCountyCode: z.string().optional(),
   fleetNo: z.string().optional(),
-  includeOnlyActiveFleetRoutes: z.enum(["true", "false"]).optional(),
+  includeOnlyForActiveFleetRoutes: z.enum(["true", "false"]).optional(),
 });
 
 export const RouteStageschema = z.object({
@@ -105,6 +105,10 @@ export const RouteStageschema = z.object({
 
 export const FleetRouteSchema = z.object({
   routeId: z.string().min(1, "Required").uuid(),
+});
+export const FleetRouteFilterSchema = z.object({
+  routeId: z.string().min(1, "Required").uuid().optional(),
+  includeOnlyActiveFleetRoutes: z.enum(["true", "false"]).optional(),
 });
 
 export const RoutePricingSchema = z.object({

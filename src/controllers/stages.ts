@@ -13,7 +13,7 @@ export const getStages = async (
     const validation = await StagesFilterShema.safeParseAsync(req.query);
     if (!validation.success)
       throw new APIException(400, validation.error.format());
-    const { search, includeOnlyActiveFleetRoutes, fleetNo, ...filters } =
+    const { search, includeOnlyForActiveFleetRoutes, fleetNo, ...filters } =
       validation.data;
     const results = await StagesModel.findMany({
       where: {
@@ -28,11 +28,11 @@ export const getStages = async (
                     some: {
                       fleet: { name: fleetNo },
                       isActive:
-                        includeOnlyActiveFleetRoutes &&
-                        includeOnlyActiveFleetRoutes === "true"
+                        includeOnlyForActiveFleetRoutes &&
+                        includeOnlyForActiveFleetRoutes === "true"
                           ? true
-                          : includeOnlyActiveFleetRoutes &&
-                            includeOnlyActiveFleetRoutes === "false"
+                          : includeOnlyForActiveFleetRoutes &&
+                            includeOnlyForActiveFleetRoutes === "false"
                           ? false
                           : undefined,
                     },

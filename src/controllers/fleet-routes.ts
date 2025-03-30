@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { FleetRoutesModel } from "../models";
-import { FleetRouteSchema } from "@/schema";
+import { FleetRouteFilterSchema, FleetRouteSchema } from "@/schema";
 import { getMultipleOperationCustomRepresentationQeury } from "@/utils/db";
 import { APIException } from "@/utils/exceptions";
 import db from "@/services/db";
@@ -11,8 +11,24 @@ export const getFleetRoutes = async (
   next: NextFunction
 ) => {
   try {
+    const validation = await FleetRouteFilterSchema.safeParseAsync(req.query);
+    if (!validation.success)
+      throw new APIException(400, validation.error.format());
+    const { includeOnlyActiveFleetRoutes, ...filters } = validation.data;
     const results = await FleetRoutesModel.findMany({
-      where: { voided: false, fleetId: req.params.fleetId! },
+      where: {
+        voided: false,
+        fleetId: req.params.fleetId!,
+        ...filters,
+        isActive:
+          includeOnlyActiveFleetRoutes &&
+          includeOnlyActiveFleetRoutes === "true"
+            ? true
+            : includeOnlyActiveFleetRoutes &&
+              includeOnlyActiveFleetRoutes === "false"
+            ? false
+            : undefined,
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json({ results });
