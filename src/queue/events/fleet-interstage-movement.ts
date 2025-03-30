@@ -1,3 +1,4 @@
+import logger from "@/services/logger";
 import { sendSocketMessage } from "@/socket";
 import { FleetRouteInterStageMovement } from "@/types";
 import { MessageHandler } from "@/utils/stream";
@@ -10,13 +11,19 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
     "stream_movement",
     "/fleet",
     metadata?.fleetNo ?? payload?.fleetNo,
+    payload.routeId,
     payload.routeName,
+    payload.currentStageId,
     payload.currentStage,
-    payload.nextStage
+    payload.nextStageId,
+    payload.nextStage,
+    payload.traversalDirection
   );
-  console.log(
-    `Processing message ${messageId} from ${streamKey}:`,
-    JSON.stringify(payload, null, 2)
+  logger.debug(
+    `Processed fleet inter-stage movement: fleetNo=${
+      metadata?.fleetNo ?? payload?.fleetNo
+    }, routeId=${payload.routeId}, currentStage=${
+      payload.currentStage
+    }, nextStage=${payload.nextStage}, Direction: ${payload.traversalDirection}`
   );
-  console.log("Metadata: ", metadata);
 };

@@ -18,11 +18,23 @@ export const fleetMovementEvents = (
         ({ data: { fleetNo: fln } }) => fleetNo === fln
       );
 
+    const routeId = lastEntry[0]?.data?.routeId ?? "Uknown";
     const routeName = lastEntry[0]?.data?.routeName ?? "Uknown";
+    const currentStageId = lastEntry[0]?.data?.currentStageId ?? "Uknown";
     const currentStage = lastEntry[0]?.data?.currentStage ?? "Uknown";
+    const nextStageId = lastEntry[0]?.data?.nextStageId ?? "Unkown";
     const nextStage = lastEntry[0]?.data?.nextStage ?? "Unkown";
-
-    socket.emit("stream_movement", routeName, currentStage, nextStage);
+    const direction = lastEntry[0]?.data?.traversalDirection ?? "Unknown";
+    socket.emit(
+      "stream_movement",
+      routeId,
+      routeName,
+      currentStageId,
+      currentStage,
+      nextStageId,
+      nextStage,
+      direction
+    );
   });
 };
 3;
