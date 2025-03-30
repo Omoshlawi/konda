@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { FleetsModel } from "../models";
-import { FleetSchema } from "@/schema";
+import { FleetFilterSchema, FleetSchema } from "@/schema";
 import { getMultipleOperationCustomRepresentationQeury } from "@/utils/db";
 import { APIException } from "@/utils/exceptions";
 
@@ -10,8 +10,32 @@ export const getFleets = async (
   next: NextFunction
 ) => {
   try {
+    const validation = await FleetFilterSchema.safeParseAsync(req.query);
+    if (!validation.success)
+      throw new APIException(400, validation.error.format());
+    const { search, ...filters } = validation.data;
     const results = await FleetsModel.findMany({
-      where: { voided: false },
+      where: {
+        AND: [
+          { voided: false, ...filters },
+          {
+            OR: search
+              ? [
+                  {
+                    name: {
+                      contains: search, //  mode: "insensitive"
+                    },
+                  },
+                  {
+                    plateNumber: {
+                      contains: search, //  mode: "insensitive"
+                    },
+                  },
+                ]
+              : undefined,
+          },
+        ],
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json({ results });

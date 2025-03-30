@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { StagesModel } from "../models";
-import { StagesShema } from "@/schema";
+import { StagesFilterShema, StagesShema } from "@/schema";
 import { getMultipleOperationCustomRepresentationQeury } from "@/utils/db";
 import { APIException } from "@/utils/exceptions";
 
@@ -10,8 +10,51 @@ export const getStages = async (
   next: NextFunction
 ) => {
   try {
+    const validation = await StagesFilterShema.safeParseAsync(req.query);
+    if (!validation.success)
+      throw new APIException(400, validation.error.format());
+    const { search, includeOnlyActiveFleetRoutes, fleetNo, ...filters } =
+      validation.data;
     const results = await StagesModel.findMany({
-      where: { voided: false },
+      where: {
+        AND: [
+          {
+            voided: false,
+            ...filters,
+            routes: {
+              some: {
+                route: {
+                  fleets: {
+                    some: {
+                      fleet: { name: fleetNo },
+                      isActive:
+                        includeOnlyActiveFleetRoutes &&
+                        includeOnlyActiveFleetRoutes === "true"
+                          ? true
+                          : includeOnlyActiveFleetRoutes &&
+                            includeOnlyActiveFleetRoutes === "false"
+                          ? false
+                          : undefined,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          {
+            OR: search
+              ? [
+                  {
+                    name: {
+                      contains: search,
+                      //  mode: "insensitive"
+                    },
+                  },
+                ]
+              : undefined,
+          },
+        ],
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json({ results });

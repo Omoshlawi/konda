@@ -47,6 +47,19 @@ export const FleetSchema = z.object({
   status: z.enum(["Active", "Inactive", "Maintenance"]),
 });
 
+export const FleetFilterSchema = z.object({
+  search: z.string().optional(),
+  name: z.string().optional(),
+  vehicleType: z.enum(["Bus", "Matatu", "Shuttle"]).optional(),
+  capacity: z.number({ coerce: true }).optional(),
+  plateNumber: z
+    .string()
+    .regex(PLATE_NUMBER_REGEX)
+    .min(1, "Required")
+    .optional(),
+  status: z.enum(["Active", "Inactive", "Maintenance"]).optional(),
+});
+
 export const RouteSchema = z.object({
   name: z.string().min(1, "Required"),
   startPoint: z.string().min(1, "Required"),
@@ -68,6 +81,22 @@ export const StagesShema = z.object({
     .positive("Must be a positive integer"),
   countyCode: z.string().min(1, "Required"),
   subCountyCode: z.string().min(1, "Required"),
+});
+
+export const StagesFilterShema = z.object({
+  search: z.string().optional(),
+  name: z.string().optional(),
+  latitude: z.number({ coerce: true }).min(-90).max(90).optional(),
+  longitude: z.number({ coerce: true }).min(-180).max(180).optional(),
+  radius: z
+    .number({ coerce: true })
+    .int()
+    .positive("Must be a positive integer")
+    .optional(),
+  countyCode: z.string().optional(),
+  subCountyCode: z.string().optional(),
+  fleetNo: z.string().optional(),
+  includeOnlyActiveFleetRoutes: z.enum(["true", "false"]).optional(),
 });
 
 export const RouteStageschema = z.object({
