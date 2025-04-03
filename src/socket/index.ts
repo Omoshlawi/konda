@@ -3,17 +3,20 @@ import { commandEvents } from "./events";
 import chatsEvents from "./events/chats";
 import logger from "@/services/logger";
 import { fleetMovementEvents } from "./events/fleet_movement";
+import { fleetLiveLocation } from "./events/fleet-live-location";
 
 export const setUpSocketNamespacesAndSubscribeToEvents = () => {
   // Namespace management
   const chatNamespace = socketIO.of("/ws/chat");
   const commandsNamespace = socketIO.of("/ws/cmd");
-  const fleetMovementNamespace = socketIO.of("/ws/fleet");
+  const fleetMovementNamespace = socketIO.of("/ws/fleet-movement");
+  const fleetLiveLocationNamespace = socketIO.of("/ws/fleet-live-location");
 
   // Register events for different namespaces
   commandsNamespace.on("connection", commandEvents);
   chatNamespace.on("connection", chatsEvents);
   fleetMovementNamespace.on("connection", fleetMovementEvents);
+  fleetLiveLocationNamespace.on("connection", fleetLiveLocation);
   logger.info("Loaded namespaces and events, waiting client connections");
 };
 

@@ -9,7 +9,7 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
 > = async (streamKey, messageId, payload, metadata) => {
   sendSocketMessage(
     "stream_movement",
-    "/fleet",
+    "/fleet-movement",
     metadata?.fleetNo ?? payload?.fleetNo,
     payload.routeId,
     payload.routeName,

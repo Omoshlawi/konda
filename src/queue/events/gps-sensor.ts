@@ -1,6 +1,7 @@
 import { FleetRoutesModel } from "@/models";
 import { GPSSensorDataSchema } from "@/schema";
 import logger from "@/services/logger";
+import { sendSocketMessage } from "@/socket";
 import {
   FleetRouteInterStageMovement,
   GPSSesorData,
@@ -40,6 +41,17 @@ export const gpsStreamHandler: MessageHandler<
       lat: payload.latitude,
       lng: payload.longitude,
     });
+
+    // Broad cast to clients
+    sendSocketMessage(
+      "stream_live_location",
+      "/fleet-live-location",
+      payload?.fleetNo,
+      JSON.stringify(payload)
+    );
+    logger.info(
+      `Broadcasted live GPS location for fleet: ${payload.fleetNo} to clients.`
+    );
 
     // Get active routes for this fleet
     const activeFleetRoute = await FleetRoutesModel.findFirst({
