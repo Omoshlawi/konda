@@ -33,18 +33,19 @@ model Account {
 }
 
 model User {
-  id              String    @id @default(uuid()) //@db.Uuid
-  username        String    @unique
-  profileUpdated  Boolean   @default(false)
+  id              String         @id @default(uuid()) //@db.Uuid
+  username        String         @unique
+  profileUpdated  Boolean        @default(false)
   accountVerified DateTime?
-  voided          Boolean   @default(false)
-  isAdmin         Boolean   @default(false)
+  voided          Boolean        @default(false)
+  isAdmin         Boolean        @default(false)
   password        String
   lastLogin       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
   person          Person?
   accounts        Account[]
+  notifications   Notification[]
 }
 
 // Represent Human
@@ -216,10 +217,11 @@ model RouteStage {
   //  fromTickets Ticket[] @relation("FromStage")
   // toTickets   Ticket[] @relation("ToStage")
 
-  stage     Stage    @relation(references: [id], fields: [stageId], onDelete: Cascade)
-  route     Route    @relation(fields: [routeId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  stage         Stage          @relation(references: [id], fields: [stageId], onDelete: Cascade)
+  route         Route          @relation(fields: [routeId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  notifications Notification[]
 
   @@unique([routeId, stageId]) // TODO Add tenant id when upgraded to multitenant
 }
@@ -257,11 +259,32 @@ model Trip {
   updatedAt      DateTime  @updatedAt
   voided         Boolean   @default(false)
 
-  fleet        Fleet @relation(fields: [fleetId], references: [id])
-  route        Route @relation(fields: [routeId], references: [id])
-  currentStage Stage @relation(fields: [currentStageId], references: [id], name: "FromStage")
-  toStage      Stage @relation(fields: [toStageId], references: [id], name: "ToStage")
+  fleet        Fleet          @relation(fields: [fleetId], references: [id])
+  route        Route          @relation(fields: [routeId], references: [id])
+  currentStage Stage          @relation(fields: [currentStageId], references: [id], name: "FromStage")
+  toStage      Stage          @relation(fields: [toStageId], references: [id], name: "ToStage")
   // tickets      Ticket[]
+  notification  Notification[]
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  userId        String? // Nullable: For authenticated users
+  expoPushToken String // Nullable: For unauthenticated users
+  routeStageId  String // Stage where the notification should trigger
+  tripId        String
+  message       String
+  scheduleTime  DateTime // When to trigger the notification
+  isSent        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  routeStage RouteStage @relation(fields: [routeStageId], references: [id])
+  trip       Trip       @relation(fields: [tripId], references: [id])
+
+  @@index([userId, expoPushToken]) // Optimize queries for both types of users
 }
 
 // TODO Add Reviews,payment
