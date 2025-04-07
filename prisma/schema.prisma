@@ -47,6 +47,7 @@ model User {
   person          Person?
   accounts        Account[]
   notifications   Notification[]
+  passenger       Passenger?
 }
 
 // Represent Human
@@ -203,10 +204,10 @@ model Stage {
   routes        RouteStage[]
   fromPricings  RoutePricing[] @relation("FromPricing")
   toPricings    RoutePricing[] @relation("ToPricing")
-  fromTrips     Trip[]         @relation("FromStage")
-  toTrips       Trip[]         @relation("ToStage")
   county        County         @relation(fields: [countyCode], onDelete: Cascade, references: [code])
   subCounty     SubCounty      @relation(fields: [subCountyCode], onDelete: Cascade, references: [code])
+  fromTickets   Ticket[]       @relation("FromStage")
+  toTickets     Ticket[]       @relation("ToStage")
 }
 
 model RouteStage {
@@ -240,31 +241,27 @@ model RoutePricing {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   voided      Boolean  @default(false)
-
-  route     Route @relation(fields: [routeId], references: [id])
-  fromStage Stage @relation(fields: [fromStageId], references: [id], name: "FromPricing")
-  toStage   Stage @relation(fields: [toStageId], references: [id], name: "ToPricing")
+  // const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }); // e.g., "Monday"
+  // ← Store comma seperated days like: "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday"
+  activeDays  String
+  route       Route    @relation(fields: [routeId], references: [id])
+  fromStage   Stage    @relation(fields: [fromStageId], references: [id], name: "FromPricing")
+  toStage     Stage    @relation(fields: [toStageId], references: [id], name: "ToPricing")
 }
 
-// 
+// const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }); // e.g., "Wednesday"
 model Trip {
-  id             String    @id @default(uuid())
-  fleetId        String
-  routeId        String
-  currentStageId String // from stage
-  toStageId      String
-  status         String // Ongoing, Completed, Cancelled
-  startedAt      DateTime?
-  endedAt        DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  voided         Boolean   @default(false)
-
-  fleet        Fleet          @relation(fields: [fleetId], references: [id])
-  route        Route          @relation(fields: [routeId], references: [id])
-  currentStage Stage          @relation(fields: [currentStageId], references: [id], name: "FromStage")
-  toStage      Stage          @relation(fields: [toStageId], references: [id], name: "ToStage")
-  // tickets      Ticket[]
+  id           String             @id @default(uuid())
+  fleetId      String
+  routeId      String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  voided       Boolean            @default(false)
+  activeDays   String // 
+  fleet        Fleet              @relation(fields: [fleetId], references: [id])
+  route        Route              @relation(fields: [routeId], references: [id])
+  direction    TraversalDirection
+  tickets      Ticket[]
   notification Notification[]
 }
 
@@ -288,31 +285,40 @@ model Notification {
   @@index([userId, expoPushToken]) // Optimize queries for both types of users
 }
 
+enum TraversalDirection {
+  Forward
+  Reverse
+}
+
+model Passenger {
+  id        String   @id @default(uuid())
+  userId    String?  @unique
+  name      String
+  contact   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets   Ticket[]
+  voided    Boolean  @default(false)
+  user      User?    @relation(fields: [userId], onDelete: Cascade, references: [id])
+}
+
+model Ticket {
+  id            String    @id @default(uuid())
+  passengerId   String
+  tripId        String
+  fromStageId   String
+  toStageId     String
+  price         Decimal
+  seatNumber    Int? // Optional: If seating is fixed
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  paymentStatus String // Paid, Pending, Failed
+  issuedAt      DateTime  @default(now())
+  voided        Boolean   @default(false)
+  passenger     Passenger @relation(fields: [passengerId], references: [id])
+  trip          Trip      @relation(fields: [tripId], references: [id])
+  fromStage     Stage     @relation(fields: [fromStageId], references: [id], name: "FromStage")
+  toStage       Stage     @relation(fields: [toStageId], references: [id], name: "ToStage")
+}
+
 // TODO Add Reviews,payment
-
-// model Passenger {
-//   id                     String   @id @default(uuid())
-//   name                   String
-//   contact                String   @unique
-//   preferredPaymentMethod String // Cash, Mpesa, Card
-//   createdAt              DateTime @default(now())
-//   updatedAt              DateTime @updatedAt
-//   // tickets                Ticket[]
-//   voided                 Boolean  @default(false)
-// }
-
-// model Ticket {
-//   id            String    @id @default(uuid())
-//   passengerId   String
-//   tripId        String
-//   fromStageId   String
-//   toStageId     String
-//   pricePaid     Float
-//   paymentStatus String // Paid, Pending, Failed
-//   issuedAt      DateTime  @default(now())
-//   voided        Boolean   @default(false)
-//   passenger     Passenger @relation(fields: [passengerId], references: [id])
-//   trip          Trip      @relation(fields: [tripId], references: [id])
-//   fromStage     Stage     @relation(fields: [fromStageId], references: [id], name: "FromStage")
-//   toStage       Stage     @relation(fields: [toStageId], references: [id], name: "ToStage")
-// }
