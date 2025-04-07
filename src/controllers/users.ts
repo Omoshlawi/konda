@@ -1,5 +1,5 @@
 import { UsersModel } from "@/models";
-import { UserFilterSchema } from "@/schema";
+import { UserFilterSchema, UserTokenUpdateSchema } from "@/schema";
 import { getMultipleOperationCustomRepresentationQeury } from "@/utils/db";
 import { APIException } from "@/utils/exceptions";
 import { Request, Response, NextFunction } from "express";
@@ -108,6 +108,25 @@ export const getUser = async (
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUserPushToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const validation = await UserTokenUpdateSchema.safeParseAsync(req.body);
+    if (!validation.success)
+      throw new APIException(400, validation.error.format());
+    const user = await UsersModel.update({
+      where: { id: req.user?.id },
+      data: validation.data,
+    });
+    return res.json(user);
   } catch (error) {
     next(error);
   }

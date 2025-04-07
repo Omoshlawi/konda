@@ -32,6 +32,9 @@ export const OauthAuthSchema = z.object({
 export const UserFilterSchema = z.object({
   search: z.string().optional(),
 });
+export const UserTokenUpdateSchema = z.object({
+  expoPushToken: z.string().nonempty("Required"),
+});
 
 export const OperatorSchema = z.object({
   name: z.string().min(1, "Required"),

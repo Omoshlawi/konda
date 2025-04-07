@@ -37,6 +37,7 @@ model User {
   username        String         @unique
   profileUpdated  Boolean        @default(false)
   accountVerified DateTime?
+  expoPushToken   String?
   voided          Boolean        @default(false)
   isAdmin         Boolean        @default(false)
   password        String
@@ -264,7 +265,7 @@ model Trip {
   currentStage Stage          @relation(fields: [currentStageId], references: [id], name: "FromStage")
   toStage      Stage          @relation(fields: [toStageId], references: [id], name: "ToStage")
   // tickets      Ticket[]
-  notification  Notification[]
+  notification Notification[]
 }
 
 model Notification {
@@ -273,7 +274,7 @@ model Notification {
   expoPushToken String // Nullable: For unauthenticated users
   routeStageId  String // Stage where the notification should trigger
   tripId        String
-  message       String
+  message       String // TODO Change to JSON or @db.Text
   scheduleTime  DateTime // When to trigger the notification
   isSent        Boolean  @default(false)
   createdAt     DateTime @default(now())
