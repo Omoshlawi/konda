@@ -257,7 +257,6 @@ model Trip {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   voided       Boolean            @default(false)
-  activeDays   String // 
   fleet        Fleet              @relation(fields: [fleetId], references: [id])
   route        Route              @relation(fields: [routeId], references: [id])
   direction    TraversalDirection

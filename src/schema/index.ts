@@ -119,6 +119,18 @@ export const RoutePricingSchema = z.object({
   toStageId: z.string().min(1, "Required").uuid(),
   price: z.number().positive("Must be a positive number"),
   timeStart: z.string().min(1, "Required"),
+  activeDays: z
+    .enum([
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ])
+    .array()
+    .nonempty("You must rovide atleast one day of the week"),
   timeEnd: z.string().min(1, "Required"),
 });
 

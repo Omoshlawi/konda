@@ -50,7 +50,11 @@ export const addRoutePricing = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const item = await RoutePricingsModel.create({
-      data: { ...validation.data, routeId: req.params.routeId! },
+      data: {
+        ...validation.data,
+        routeId: req.params.routeId!,
+        activeDays: validation.data.activeDays.join(","),
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
@@ -74,7 +78,10 @@ export const updateRoutePricing = async (
         voided: false,
         routeId: req.params.routeId!,
       },
-      data: validation.data,
+      data: {
+        ...validation.data,
+        activeDays: validation.data.activeDays.join(","),
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
@@ -100,7 +107,10 @@ export const patchRoutePricing = async (
         voided: false,
         routeId: req.params.routeId!,
       },
-      data: validation.data,
+      data: {
+        ...validation.data,
+        activeDays: validation.data.activeDays?.join(","),
+      },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });
     return res.json(item);
