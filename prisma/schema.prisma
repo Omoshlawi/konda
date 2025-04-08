@@ -208,6 +208,8 @@ model Stage {
   subCounty     SubCounty      @relation(fields: [subCountyCode], onDelete: Cascade, references: [code])
   fromTickets   Ticket[]       @relation("FromStage")
   toTickets     Ticket[]       @relation("ToStage")
+  startTrips    Trip[]         @relation("StartStage")
+  endTrips      Trip[]         @relation("EndStage")
 }
 
 model RouteStage {
@@ -254,7 +256,10 @@ model Trip {
   id           String             @id @default(uuid())
   fleetId      String
   routeId      String
+  startStageId String
+  endStageId   String?
   createdAt    DateTime           @default(now())
+  endedAt      DateTime?
   updatedAt    DateTime           @updatedAt
   voided       Boolean            @default(false)
   fleet        Fleet              @relation(fields: [fleetId], references: [id])
@@ -262,6 +267,8 @@ model Trip {
   direction    TraversalDirection
   tickets      Ticket[]
   notification Notification[]
+  startStage   Stage              @relation(fields: [startStageId], references: [id], name: "StartStage")
+  endStage     Stage?             @relation(fields: [endStageId], references: [id], name: "EndStage")
 }
 
 model Notification {

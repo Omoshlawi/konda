@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { type User } from "../../dist/prisma";
 import {
+  FleetCommandDataSchema,
   FleetRouteInterStageMovementSchema,
   GPSSensorDataSchema,
+  TripStartArgsDataSchema,
 } from "@/schema";
 
 export interface TokenPayload {
@@ -21,10 +23,12 @@ declare global {
   }
 }
 
-export type TraversalDirection = "forward" | "reverse";
+export type TraversalDirection = "Forward" | "Reverse";
 
 export type FleetRouteInterStageMovement = z.infer<
   typeof FleetRouteInterStageMovementSchema
 >;
+export type FleetCommand = z.infer<typeof FleetCommandDataSchema>;
+export type TripStartArgs = z.infer<typeof TripStartArgsDataSchema>;
 
 export type GPSSesorData = z.infer<typeof GPSSensorDataSchema>;

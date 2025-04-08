@@ -9,6 +9,7 @@ import {
 } from "@/types";
 
 import {
+  findNextStage,
   getDistanceInMeteresBetweenTwoPoints,
   isWithinRadius,
 } from "@/utils/geo";
@@ -37,10 +38,12 @@ export const gpsStreamHandler: MessageHandler<
       return;
     }
 
-    logger.debug(`Processing GPS data for fleet: ${payload.fleetNo}`, {
-      lat: payload.latitude,
-      lng: payload.longitude,
-    });
+    logger.debug(
+      `Processing GPS data for fleet: ${payload.fleetNo} ${JSON.stringify({
+        lat: payload.latitude,
+        lng: payload.longitude,
+      })}`
+    );
 
     // Broad cast to clients
     sendSocketMessage(
@@ -118,9 +121,9 @@ export const gpsStreamHandler: MessageHandler<
         return;
       }
       const direction: TraversalDirection = isAtLastStage
-        ? "reverse"
-        : "forward";
-      const idx = direction === "forward" ? 0 : -1;
+        ? "Reverse"
+        : "Forward";
+      const idx = direction === "Forward" ? 0 : -1;
       const nextStage = findNextStage(
         stagesInOrder,
         stagesInOrder.at(idx)!.stageId,
@@ -137,6 +140,8 @@ export const gpsStreamHandler: MessageHandler<
           nextStage: nextStage!.stage.name,
           nextStageId: nextStage!.stageId,
           traversalDirection: direction,
+          fleetId: "",
+          tripId: "",
         }
       );
       logger.debug(
@@ -204,18 +209,18 @@ export const gpsStreamHandler: MessageHandler<
         let direction: TraversalDirection = traversalDirection;
         // Handle direction change at the end of the route
         if (
-          direction === "forward" &&
+          direction === "Forward" &&
           nextStage?.order === stagesInOrder.at(-1)?.order
         ) {
-          direction = "reverse";
+          direction = "Reverse";
           logger.info(
             `Fleet ${payload.fleetNo} reached the last stage. Switching direction to reverse.`
           );
         } else if (
-          direction === "reverse" &&
+          direction === "Reverse" &&
           nextStage?.order === stagesInOrder.at(0)?.order
         ) {
-          direction = "forward";
+          direction = "Forward";
           logger.info(
             `Fleet ${payload.fleetNo} reached the first stage. Switching direction to forward.`
           );
@@ -238,6 +243,8 @@ export const gpsStreamHandler: MessageHandler<
             nextStage: afterNextStage!.stage.name,
             nextStageId: afterNextStage!.stageId,
             traversalDirection: direction,
+            fleetId: "",
+            tripId: "",
           }
         );
         logger.debug(
@@ -256,77 +263,6 @@ export const gpsStreamHandler: MessageHandler<
     );
   }
 };
-const findNextStage = (
-  stages: (RouteStage & { stage: Stage })[],
-  currentStageId: string,
-  direction: TraversalDirection
-) => {
-  const currentStage = stages.find((stage) => stage.stageId === currentStageId);
-  if (!currentStage) {
-    logger.warn(`Current stage with ID ${currentStageId} not found.`);
-    return null;
-  }
-
-  if (direction === "forward") {
-    // If we're moving forward and at the last stage
-    if (currentStage.order === stages.length - 1) {
-      // Return the previous stage (since we're about to reverse)
-      return stages.find((stage) => stage.order === currentStage.order - 1);
-    }
-    // Otherwise return the next stage
-    return stages.find((stage) => stage.order === currentStage.order + 1);
-  } else if (direction === "reverse") {
-    // If we're moving backward and at the first stage
-    if (currentStage.order === 0) {
-      // Return the next stage (since we're about to go forward)
-      return stages.find((stage) => stage.order === currentStage.order + 1);
-    }
-    // Otherwise return the previous stage
-    return stages.find((stage) => stage.order === currentStage.order - 1);
-  }
-
-  logger.warn(`Invalid traversal direction: ${direction}`);
-  return null;
-};
-
-const findNextStageHybrid = (
-  stages: (RouteStage & { stage: Stage })[],
-  currentStageId: string,
-  direction: TraversalDirection,
-  currentLat: number,
-  currentLng: number
-) => {
-  const currentStage = stages.find((stage) => stage.stageId === currentStageId);
-  if (!currentStage) {
-    logger.warn(`Current stage with ID ${currentStageId} not found.`);
-    return null;
-  }
-
-  // Order-based lookup
-  const orderNextStage =
-    direction === "forward"
-      ? stages.find((stage) => stage.order === currentStage.order + 1)
-      : stages.find((stage) => stage.order === currentStage.order - 1);
-
-  // If we found the next stage by order, return it
-  if (orderNextStage) return orderNextStage;
-
-  // Fallback: Find the nearest stage
-  let nearestStage = null;
-  let minDistance = Infinity;
-  for (const stage of stages) {
-    const distance = getDistanceInMeteresBetweenTwoPoints(
-      [currentLat, currentLng],
-      [stage.stage.latitude.toNumber(), stage.stage.longitude.toNumber()]
-    );
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearestStage = stage;
-    }
-  }
-
-  return nearestStage;
-};
 
 async () => {
   console.log("------------------|Test|------------------");
@@ -343,7 +279,7 @@ async () => {
     activeFleetRoute?.route.stages.sort((a, b) => a.order - b.order) ?? [];
 
   let currentStageId = stagesInOrder.at(0)?.stageId ?? null;
-  let direction: TraversalDirection = "forward";
+  let direction: TraversalDirection = "Forward";
 
   while (currentStageId) {
     const currentStage = stagesInOrder.find(
@@ -363,16 +299,16 @@ async () => {
 
     // Optionally switch direction if at the end of the route
     if (
-      direction === "forward" &&
+      direction === "Forward" &&
       nextStage?.order === stagesInOrder.at(-1)?.order
     ) {
-      direction = "reverse";
+      direction = "Reverse";
       console.log(`[-] Switching direction to reverse.`);
     } else if (
-      direction === "reverse" &&
+      direction === "Reverse" &&
       nextStage?.order === stagesInOrder.at(0)?.order
     ) {
-      direction = "forward";
+      direction = "Forward";
       console.log(`[-] Switching direction to forward.`);
     }
     await new Promise((resolve) => setInterval(resolve, 3000));

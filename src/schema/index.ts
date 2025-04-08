@@ -164,13 +164,26 @@ export const GPSSensorDataSchema = z.object({
   longitude: z.number().min(-180).max(180),
 });
 
-export const FleetRouteInterStageMovementSchema = z.object({
+export const TripStartArgsDataSchema = z.object({
+  direction: z.enum(["Forward", "Reverse"]),
+  starter: z.string().uuid().optional(),
+});
+
+export const FleetCommandDataSchema = z.object({
   fleetNo: z.string().nonempty(),
-  routeName: z.string().nonempty(),
+  command: z.string().nonempty("Unsurpoted command"),
+  args: z.any().optional(),
+});
+
+export const FleetRouteInterStageMovementSchema = z.object({
+  fleetId: z.string().uuid(),
+  fleetNo: z.string().nonempty(),
   routeId: z.string().uuid(),
-  currentStage: z.string().nonempty(),
+  routeName: z.string().nonempty(),
   currentStageId: z.string().uuid(),
-  nextStage: z.string().nonempty(),
+  currentStage: z.string().nonempty(),
   nextStageId: z.string().uuid(),
-  traversalDirection: z.enum(["forward", "reverse"]),
+  nextStage: z.string().nonempty(),
+  tripId: z.string().uuid(),
+  traversalDirection: z.enum(["Forward", "Reverse"]),
 });

@@ -7,6 +7,7 @@ export const MQTT_TOPICS = Object.freeze({
   GPS: "sensors/gps",
   TEMPERATURE: "sensors/tmp",
   CMD_BROADCAST: "sensor/cmd/broadcast",
+  FLEET_COMMANDS:"fleet/command"
 });
 
 export const subscribeToMQTTTopicsAndEvents = () => {

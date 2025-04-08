@@ -10,7 +10,7 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
   sendSocketMessage(
     "stream_movement",
     "/fleet-movement",
-    metadata?.fleetNo ?? payload?.fleetNo,
+    payload.fleetNo,
     payload.routeId,
     payload.routeName,
     payload.currentStageId,
@@ -20,10 +20,6 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
     payload.traversalDirection
   );
   logger.debug(
-    `Processed fleet inter-stage movement: fleetNo=${
-      metadata?.fleetNo ?? payload?.fleetNo
-    }, routeId=${payload.routeId}, currentStage=${
-      payload.currentStage
-    }, nextStage=${payload.nextStage}, Direction: ${payload.traversalDirection}`
+    `Processed fleet inter-stage movement: fleetNo=${payload?.fleetNo}, routeId=${payload.routeId}, currentStage=${payload.currentStage}, nextStage=${payload.nextStage}, Direction: ${payload.traversalDirection}`
   );
 };
