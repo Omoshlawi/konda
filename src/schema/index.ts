@@ -182,8 +182,8 @@ export const FleetRouteInterStageMovementSchema = z.object({
   routeName: z.string().nonempty(),
   currentStageId: z.string().uuid(),
   currentStage: z.string().nonempty(),
-  nextStageId: z.string().uuid(),
-  nextStage: z.string().nonempty(),
+  nextStageId: z.string().uuid().optional(),
+  nextStage: z.string().nonempty().optional(),
   tripId: z.string().uuid(),
   traversalDirection: z.enum(["Forward", "Reverse"]),
 });

@@ -1,17 +1,11 @@
-import { FleetRoutesModel, TripsModel } from "@/models";
-import { TripStartArgsDataSchema } from "@/schema";
+import { TripsModel } from "@/models";
 import logger from "@/services/logger";
 import {
-  FleetRouteInterStageMovement,
-  GPSSesorData,
-  TripStartArgs,
+    FleetRouteInterStageMovement
 } from "@/types";
 import {
-  getLatestEntriesFromStream,
-  publishToRedisStream,
+    getLatestEntriesFromStream
 } from "@/utils/stream";
-import { MQTT_TOPICS } from "../index";
-import { findNextStage, isWithinRadius } from "@/utils/geo";
 
 export const endTrip = async (fleetNo: string) => {
   // Get current trip for fleet unended
