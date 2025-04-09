@@ -11,14 +11,11 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
     "stream_movement",
     "/fleet-movement",
     payload.fleetNo,
-    payload.routeId,
-    payload.routeName,
-    payload.currentStageId,
-    payload.currentStage,
-    payload.nextStageId,
-    payload.nextStage,
-    payload.traversalDirection
+    JSON.stringify(payload)
   );
+
+  // Send push notification reminders to clients who requested it
+
   logger.debug(
     `Processed fleet inter-stage movement: fleetNo=${payload?.fleetNo}, routeId=${payload.routeId}, currentStage=${payload.currentStage}, nextStage=${payload.nextStage}, Direction: ${payload.traversalDirection}`
   );

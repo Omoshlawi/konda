@@ -18,11 +18,8 @@ export const fleetLiveLocation = (
       ({ data: { fleetNo: fln } }) => fleetNo === fln
     );
 
-    const gpsData = JSON.stringify(
-      lastEntry[0]?.data ?? { fleetNo, latitude: 0, longitude: 0 }
-    );
-
-    socket.emit("stream_live_location", gpsData);
+    if (lastEntry[0]?.data)
+      socket.emit("stream_live_location", JSON.stringify(lastEntry[0].data));
   });
 };
 3;
