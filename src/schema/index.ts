@@ -187,3 +187,16 @@ export const FleetRouteInterStageMovementSchema = z.object({
   tripId: z.string().uuid(),
   traversalDirection: z.enum(["Forward", "Reverse"]),
 });
+
+export const NotificationReminderSchema = z.object({
+  routeStageId: z.string().uuid(),
+  expoPushToken: z.string().optional(),
+  fleetNo: z.string().nonempty("Required"),
+});
+
+export const NotificationReminderFilterSchema = z.object({
+  userId: z.string().uuid().optional(),
+  routeStageId: z.string().uuid().optional(),
+  expoPushToken: z.string().optional(),
+  fleetNo: z.string().optional(),
+});

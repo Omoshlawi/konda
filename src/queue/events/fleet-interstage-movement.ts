@@ -35,7 +35,7 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
       return {
         to: data.expoPushToken,
         sound: "default",
-        body: "you have reached your destination",
+        body: data.message,
       };
     },
   });
