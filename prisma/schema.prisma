@@ -278,7 +278,6 @@ model Notification {
   routeStageId  String // Stage where the notification should trigger
   tripId        String
   message       String // TODO Change to JSON or @db.Text
-  scheduleTime  DateTime // When to trigger the notification
   isSent        Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

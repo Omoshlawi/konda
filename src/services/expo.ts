@@ -8,7 +8,9 @@ if (process.env.NODE_ENV !== "production") globalForExpo.expo = expo;
 
 export default expo;
 
-export const triggerPushToken = async <TPayload extends Record<string, any>>({
+export const triggerPushNotification = async <
+  TPayload extends Record<string, any>
+>({
   data,
   transformer,
 }: {

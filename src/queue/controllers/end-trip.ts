@@ -1,29 +1,9 @@
 import { TripsModel } from "@/models";
 import logger from "@/services/logger";
-import {
-    FleetRouteInterStageMovement
-} from "@/types";
-import {
-    getLatestEntriesFromStream
-} from "@/utils/stream";
+import { FleetRouteInterStageMovement } from "@/types";
+import { getLatestEntriesFromStream } from "@/utils/stream";
 
 export const endTrip = async (fleetNo: string) => {
-  // Get current trip for fleet unended
-  const currentTrip = await TripsModel.findFirst({
-    where: {
-      fleet: { name: fleetNo },
-      endedAt: null,
-      voided: false,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  if (!currentTrip) {
-    logger.error(`No active trip found for fleet: ${fleetNo}.`);
-    // TODO Send notification
-    return;
-  }
-
   // Get the last known movement state for this fleet
   const lastMovementEntries =
     await getLatestEntriesFromStream<FleetRouteInterStageMovement>(
@@ -32,20 +12,40 @@ export const endTrip = async (fleetNo: string) => {
     );
   const lastKnownStagesInfo = lastMovementEntries[0]?.data;
   if (!lastKnownStagesInfo) {
-    logger.warn(
-      `No current location data found for fleet: ${fleetNo}. Driver must wait until location is detected.`
-    );
+    logger.warn(`No trip movement data for fleet: ${fleetNo}.`);
+    // TODO: SEND NOTIFICATION COMMUNICATING SAME
     return;
   }
+
+  // Get current trip for fleet unended
+  const currentTrip = await TripsModel.findUnique({
+    where: {
+      id: lastKnownStagesInfo.tripId,
+      fleet: { name: fleetNo },
+      endedAt: null,
+      voided: false,
+      endStageId: null,
+    },
+  });
+
+  if (!currentTrip) {
+    logger.error(`No active trip found for fleet: ${fleetNo}.`);
+    // TODO Send notification
+    return;
+  }
+
+  logger.debug(
+    `Ending trip for fleet: ${fleetNo}, tripId: ${currentTrip.id}, currentStageId: ${lastKnownStagesInfo.currentStageId}`
+  );
 
   //   end trip Trip
   const trip = await TripsModel.update({
     where: {
       id: currentTrip.id,
-      endStageId: lastKnownStagesInfo.currentStageId,
     },
     data: {
       endedAt: new Date(),
+      endStageId: lastKnownStagesInfo.currentStageId,
     },
   });
   logger.info(`Trip ${currentTrip.id} ended succesffuclly!`);

@@ -24,6 +24,8 @@ export const startTrip = async (fleetNo: string, args: TripStartArgs) => {
     // TODO: sEND NOTIFICATION OF THE FAILURE
     return;
   }
+
+  // TODO Ensure that the previous trip wa ended by retriving trip from last location info then checking if has end stage and timeended
   // Get active routes for this fleet
   const activeFleetRoute = await FleetRoutesModel.findFirst({
     where: {
@@ -53,8 +55,8 @@ export const startTrip = async (fleetNo: string, args: TripStartArgs) => {
   const lastLocationEntries = await getLatestEntriesFromStream<GPSSesorData>(
     MQTT_TOPICS.GPS.replace("/", "_"),
     ({ data }) => data?.fleetNo === fleetNo,
-    undefined,
-    { startDate: new Date(Date.now() - 10 * 60 * 1000) }
+    undefined
+    // { startDate: new Date(Date.now() - 10 * 60 * 1000) } //TODO Uncomment in production if practical
   );
   const lastKnownLocation = lastLocationEntries[0]?.data;
   if (!lastKnownLocation) {
@@ -85,7 +87,7 @@ export const startTrip = async (fleetNo: string, args: TripStartArgs) => {
       direction: args.direction,
       fleetId: activeFleetRoute.fleetId,
       routeId: activeFleetRoute.routeId,
-      startStageId: currentStage.id,
+      startStageId: currentStage.stageId,
     },
   });
 
@@ -94,6 +96,8 @@ export const startTrip = async (fleetNo: string, args: TripStartArgs) => {
     currentStage.stageId,
     args.direction
   );
+
+  logger.info(`Trip ${trip.id} for fleet: ${fleetNo} stated succesfully`);
 
   // Publish trip info to fleet_movement_stream
   await publishToRedisStream<FleetRouteInterStageMovement>(

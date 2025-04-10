@@ -94,7 +94,13 @@ export const gpsStreamHandler: MessageHandler<
         lastEntries[0]!.data;
 
       const currentTrip = await TripsModel.findUnique({
-        where: { id: tripId, endedAt: null, voided: false, fleetId: fleetId },
+        where: {
+          id: tripId,
+          endedAt: null,
+          voided: false,
+          fleetId: fleetId,
+          endStageId: null,
+        },
       });
 
       if (!currentTrip) {

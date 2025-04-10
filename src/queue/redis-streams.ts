@@ -39,4 +39,5 @@ const mqttFleetCommandStream = async () => {
 export const subscribeToRedisStreams = () => {
   fleetStream();
   mqttGPSStream();
+  mqttFleetCommandStream();
 };

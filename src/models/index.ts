@@ -17,3 +17,4 @@ export const SubCountiesModel = db.subCounty;
 export const WardsModel = db.ward;
 export const PassengersModel = db.passenger;
 export const TocketsModel = db.ticket;
+export const NotificationsModel = db.notification
