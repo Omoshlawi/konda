@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { NotificationsModel, TripsModel } from "../models";
+import { NotificationsModel, RouteStagesModel, TripsModel } from "../models";
 import { getMultipleOperationCustomRepresentationQeury } from "@/utils/db";
 import {
   NotificationReminderFilterSchema,
@@ -62,13 +62,14 @@ export const addNotificationReminder = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
     const { fleetNo, ...data } = validation.data;
+
     const expoPushToken = data.expoPushToken ?? req.user?.expoPushToken;
     if (!expoPushToken)
       throw new APIException(400, { expoPushToken: { _errors: ["Required"] } });
     const currentTripState =
-      await getLatestEntriesFromStream<FleetRouteInterStageMovement>(
-        "stream_movement",
-        ({ data: { fleetNo: _fleetNo } }) => fleetNo === _fleetNo
+      await await getLatestEntriesFromStream<FleetRouteInterStageMovement>(
+        "fleet_movement_stream",
+        ({ data }) => data?.fleetNo === fleetNo
       );
 
     if (!currentTripState[0] || !currentTripState[0].data)
@@ -88,11 +89,22 @@ export const addNotificationReminder = async (
         _errors: ["Could not find active/current trip for the fleet"],
       });
 
+    const routeStage = await RouteStagesModel.findUnique({
+      where: { id: data.routeStageId },
+      include: {
+        stage: true,
+        route: true,
+      },
+    });
+
+    if (!routeStage)
+      throw new APIException(400, { _errors: ["Route stage not found"] });
+
     const item = await NotificationsModel.create({
       data: {
         ...data,
         expoPushToken,
-        message: `You have reached your destination`,
+        message: `You have reached your destination ${routeStage.stage.name} on route ${routeStage.route.name} with fleet ${fleetNo}`,
         userId: req?.user?.id,
         tripId: currentOngoingTrip.id,
       },
