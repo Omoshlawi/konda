@@ -21,10 +21,26 @@ export const getNotificationReminders = async (
     if (!validation.success)
       throw new APIException(400, validation.error.format());
 
-    const { fleetNo, ...filters } = validation.data;
+    const { fleetNo, isSent, expoPushToken, userId, ...filters } =
+      validation.data;
     const results = await NotificationsModel.findMany({
       where: {
-        AND: [{ ...filters, trip: { fleet: { name: fleetNo } } }],
+        AND: [
+          {
+            ...filters,
+            trip: { fleet: { name: fleetNo } },
+            isSent:
+              isSent === "true" ? true : isSent === "false" ? false : undefined,
+          },
+          {
+            OR: [
+              {
+                expoPushToken,
+              },
+              { userId },
+            ],
+          },
+        ],
       },
       ...getMultipleOperationCustomRepresentationQeury(req.query?.v as string),
     });

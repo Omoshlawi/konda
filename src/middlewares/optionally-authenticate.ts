@@ -1,52 +1,52 @@
 import { UsersModel } from "@/models";
+import logger from "@/services/logger";
 import { TokenPayload } from "@/types";
 import { configuration } from "@/utils/constants";
 import { APIException } from "@/utils/exceptions";
 import { NextFunction, Request, Response } from "express";
 import { JsonWebTokenError, TokenExpiredError, verify } from "jsonwebtoken";
 
-const authenticate = async (
+const optionallyAuthenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  if (req.user) return next();
   const token = req.header("x-access-token");
+  if (!token) {
+    return next();
+  }
   try {
-    if (!token)
-      throw new APIException(401, { detail: "Unauthorized - Token missing" });
     const { userId, type: tokenType }: TokenPayload = verify(
       token,
       configuration.auth.auth_secrete as string
     ) as TokenPayload;
-    if (tokenType !== "access")
-      throw new APIException(401, {
-        detail: "Unauthorized - Invalid token type",
-      });
+    if (tokenType !== "access") {
+      logger.warn("[Optional-auth] Unauthorized - Invalid token type");
+      return next();
+    }
 
     const user = await UsersModel.findUnique({
       where: { id: userId },
       include: { person: true },
     });
-    if (!user)
-      throw new APIException(401, { detail: "Unauthorized - Invalid Token" });
-
+    if (!user) {
+      logger.warn(
+        "[Optional-auth] Unauthorized - Invalid Token when optionally authenticating"
+      );
+      return next();
+    }
     req.user = user;
     return next();
   } catch (error: unknown) {
     if (error instanceof TokenExpiredError) {
-      return next(
-        new APIException(401, { detail: "Unauthorized - Token expired" })
-      );
+      logger.warn("[Optional-auth] Unauthorized - Token expired");
+      return next();
     } else if (error instanceof JsonWebTokenError) {
-      return next(
-        new APIException(401, { detail: "Unauthorized - Invalid Token" })
-      );
-    } else if (error instanceof APIException) {
-      return next(error);
+      logger.warn("[Optional-auth] Unauthorized - Invalid Token");
+      return next();
     }
     return next(new APIException(500, { detail: "Internal Server Error" }));
   }
 };
 
-export default authenticate;
+export default optionallyAuthenticate;

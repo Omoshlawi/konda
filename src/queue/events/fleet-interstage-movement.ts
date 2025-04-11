@@ -22,6 +22,7 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
   const notifications = await NotificationsModel.findMany({
     where: {
       tripId: payload.tripId,
+      isSent: false,
       routeStage: {
         stageId: payload.currentStageId,
         routeId: payload.routeId,
@@ -40,7 +41,11 @@ export const fleetInterStageMovementStreamHandler: MessageHandler<
     },
   });
 
-  // TODO Check for delivery status
+  // TODO Check for delivery status and those succesfuly be marlked as sent
+  await NotificationsModel.updateMany({
+    where: { id: { in: notifications.map((n) => n.id) } },
+    data: { isSent: true },
+  });
 
   logger.debug(
     `Processed fleet inter-stage movement: fleetNo=${payload?.fleetNo}, routeId=${payload.routeId}, currentStage=${payload.currentStage}, nextStage=${payload.nextStage}, Direction: ${payload.traversalDirection}`

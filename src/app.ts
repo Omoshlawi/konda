@@ -6,12 +6,17 @@ import cors from "cors";
 import { toNumber } from "lodash";
 import logger from "@/services/logger";
 import router from "@/routes";
-import { handleErrorsMiddleWare, cookieToHeader } from "@/middlewares";
+import {
+  handleErrorsMiddleWare,
+  cookieToHeader,
+  optionallyAuthenticate,
+} from "@/middlewares";
 import { setUpSocketNamespacesAndSubscribeToEvents } from "@/socket";
 import { subscribeToMQTTTopicsAndEvents } from "@/queue";
 import expressHttpServer from "@/services/express-http-server";
 import cookieParser from "cookie-parser";
 import { subscribeToRedisStreams } from "./queue/redis-streams";
+import authenticate from "./middlewares/authentication";
 
 export interface ServerAddress {
   address: string;
@@ -66,6 +71,7 @@ export default class ApplicationServer {
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser(configuration.auth.auth_secrete));
     this.app.use(cookieToHeader); // Convert session cookie to session header
+    this.app.use(optionallyAuthenticate);
   }
 
   private setupRoutes(): void {

@@ -199,4 +199,5 @@ export const NotificationReminderFilterSchema = z.object({
   routeStageId: z.string().uuid().optional(),
   expoPushToken: z.string().optional(),
   fleetNo: z.string().optional(),
+  isSent: z.enum(["true", "false"]).optional(),
 });
