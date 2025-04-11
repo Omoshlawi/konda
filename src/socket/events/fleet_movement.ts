@@ -19,8 +19,7 @@ export const fleetMovementEvents = (
         ({ data: { fleetNo: fln } }) => fleetNo === fln
       );
 
-    if (lastEntry[0]?.data)
-      socket.emit("stream_movement", JSON.stringify(lastEntry[0].data));
+    socket.emit("stream_movement", JSON.stringify(lastEntry[0]?.data));
   });
 };
 3;

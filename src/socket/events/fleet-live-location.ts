@@ -18,8 +18,7 @@ export const fleetLiveLocation = (
       ({ data: { fleetNo: fln } }) => fleetNo === fln
     );
 
-    if (lastEntry[0]?.data)
-      socket.emit("stream_live_location", JSON.stringify(lastEntry[0].data));
+    socket.emit("stream_live_location", JSON.stringify(lastEntry[0]?.data));
   });
 };
 3;
