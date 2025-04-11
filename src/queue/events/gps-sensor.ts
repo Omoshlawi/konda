@@ -201,10 +201,20 @@ export const gpsStreamHandler: MessageHandler<
           logger.info(
             `Fleet ${payload.fleetNo} has reached the last stage: ${
               nextStage!.stage.name
-            }. Prompting for trip end and possible new trip initiation.`
+            }. Ending trip.`
           );
-          // TODO Prompt for end of trip
-          // Propmpt start of new trip in opposit direction (toggled traversal direction)
+          // End trip automatically
+          await TripsModel.update({
+            where: { id: currentTrip.id },
+            data: { endedAt: new Date(), endStageId: nextStage?.stageId },
+          });
+          logger.info(
+            `Trip for fleet ${
+              payload.fleetNo
+            } has been successfully ended. Trip ID: ${
+              currentTrip.id
+            }, End Stage: ${nextStage!.stage.name}.`
+          );
         }
         return;
       }
