@@ -204,7 +204,8 @@ export const nullifyExceptionAsync = <T, P extends any[], TErr = Error>(
 ): ((...args: P) => Promise<T | null>) => {
   return async (...args: P) => {
     try {
-      return await fn(...args);
+      // Ensure the function maintains its binding context
+      return await fn.apply(this, args);
     } catch (error: any) {
       onError?.(error);
       return null;
